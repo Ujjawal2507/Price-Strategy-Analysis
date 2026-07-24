@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Pricing Strategy Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F1F2F5; --panel:#FFFFFF; --sidebar:#12182B;
+    --ink:#10141F; --ink-soft:#69707D; --ink-faint:#9AA0AC;
+    --line:#E3E5EA; --line-soft:#EDEEF1;
+    --brand:#2748D9; --brand-light:#EAEEFD;
+    --good:#0E8F5E; --good-light:#E6F5EE;
+    --risk:#C4341F; --risk-light:#FBEAE7;
+    --warn:#B5680A; --warn-light:#FBF0DF;
+    --sim:#6A3FBF; --sim-light:#F1ECFB;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:'Inter',-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased;
+    font-size:15px;line-height:1.55;}
+  .mono{font-family:'Inter',-apple-system,sans-serif;font-variant-numeric:tabular-nums;font-weight:700;}
+  a{color:inherit;}
+
+  /* -------- shell -------- */
+  .shell{display:grid;grid-template-columns:222px 1fr;min-height:100vh;}
+
+  .sidebar{background:var(--sidebar);color:#C7CCDA;padding:20px 14px;display:flex;flex-direction:column;gap:20px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+  .brand{display:flex;align-items:center;gap:9px;padding:0 6px;}
+  .brand .mark{width:28px;height:28px;border-radius:6px;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex-shrink:0;}
+  .brand .name{font-size:12.5px;font-weight:700;color:#fff;line-height:1.25;}
+  .brand .sub{font-size:10px;color:#8189A0;font-weight:500;}
+
+  nav.navlist{display:flex;flex-direction:column;gap:2px;}
+  .navlabel{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:#5C6478;font-weight:700;padding:0 10px;margin:6px 0 4px;}
+  .navitem{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:6px;font-size:13.5px;font-weight:600;
+    color:#AEB4C4;cursor:pointer;border-left:2px solid transparent;}
+  .navitem:hover{background:#1A2138;color:#fff;}
+  .navitem.active{background:#1D2440;color:#fff;border-left:2px solid var(--brand);}
+
+  .provenance{border-top:1px solid #262D45;padding-top:12px;font-size:11px;color:#8891A8;line-height:1.8;}
+  .provenance .t{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#7580A0;font-weight:700;margin-bottom:6px;}
+  .provenance .row{display:flex;justify-content:space-between;gap:6px;}
+  .provenance .row b{color:#AEB4C4;font-weight:600;}
+
+  .sidebar-foot{margin-top:auto;border-top:1px solid #262D45;padding-top:12px;font-size:11.5px;color:#8891A8;line-height:1.7;}
+  .sidebar-foot .row{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+  .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+  .dot-good{background:#3BC98B;} .dot-sim{background:#9C7CF0;}
+
+  /* -------- main -------- */
+  main{padding:20px 26px 40px;max-width:1360px;}
+  .topbar{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:14px;flex-wrap:wrap;gap:10px;}
+  .topbar h1{font-size:19px;font-weight:800;margin:0 0 3px;letter-spacing:-.01em;}
+  .topbar .meta{font-size:12.5px;color:var(--ink-soft);}
+  .topbar .meta .mono{color:var(--ink);}
+  .refresh{font-size:12px;color:var(--ink-faint);text-align:right;}
+  .refresh b{color:var(--ink-soft);font-weight:600;}
+
+  .filterbar{background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    padding:10px 14px;margin-bottom:16px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;}
+  .fgroup{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .flabel{font-size:11px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;margin-right:2px;}
+  .chip{border:1px solid var(--line);background:var(--bg);color:var(--ink-soft);font-size:12.5px;font-weight:600;
+    padding:5px 11px;border-radius:5px;cursor:pointer;transition:.12s;}
+  .chip:hover{border-color:var(--brand);color:var(--ink);}
+  .chip.active{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .filterbar .fnote{margin-left:auto;font-size:11.5px;color:var(--ink-soft);}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px 18px;}
+  .panel h2{font-size:12.5px;font-weight:700;margin:0 0 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;
+    text-transform:uppercase;letter-spacing:.03em;color:var(--ink-soft);}
+  .panel h2 .hint{font-size:11.5px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--ink-soft);}
+  .badge{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:4px;text-transform:none;letter-spacing:0;}
+  .badge-good{background:var(--good-light);color:var(--good);}
+  .badge-warn{background:var(--warn-light);color:var(--warn);}
+  .badge-sim{background:var(--sim-light);color:var(--sim);}
+  .badge-model{background:var(--brand-light);color:var(--brand);}
+
+  /* ticker strip */
+  .ticker{grid-column:span 12;display:flex;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  .tcell{flex:1;padding:13px 18px;border-right:1px solid var(--line-soft);}
+  .tcell:last-child{border-right:none;}
+  .tcell .lbl{font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+  .tcell .figure{font-size:21px;font-weight:700;display:flex;align-items:baseline;gap:6px;}
+  .tcell .delta{font-size:11.5px;font-weight:700;}
+  .tcell .cap{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+  .up{color:var(--risk);} .down{color:var(--good);}
+
+  .p7{grid-column:span 7;} .p5{grid-column:span 5;} .p6{grid-column:span 6;} .p12{grid-column:span 12;}
+
+  /* insight ledger */
+  .ledger-row{display:flex;gap:10px;padding:8px 0;border-bottom:1px dotted var(--line);align-items:baseline;}
+  .ledger-row:last-child{border-bottom:none;}
+  .ledger-row .idx{font-size:10.5px;font-weight:700;flex-shrink:0;white-space:nowrap;}
+  .ledger-row p{margin:0;font-size:13px;color:var(--ink-soft);line-height:1.5;}
+  .ledger-row p b{color:var(--ink);}
+
+  /* chart */
+  .chart-wrap{position:relative;}
+  .axis-row{display:flex;justify-content:space-between;font-size:11px;color:var(--ink-soft);margin-top:4px;}
+  .footnote{margin-top:12px;padding-top:10px;border-top:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-soft);line-height:1.55;}
+  .footnote b{color:var(--ink);}
+  .footnote.method{font-size:11.5px;background:var(--bg);border:1px solid var(--line-soft);
+    border-top:none;border-radius:0 0 6px 6px;padding:10px 11px;margin-top:0;color:var(--ink-soft);line-height:1.55;}
+  .footnote.method .mono{font-size:11px;}
+
+  /* chart hover elements */
+  .tooltip-box{position:absolute;background:var(--ink);color:#fff;font-size:11.5px;font-weight:600;padding:5px 9px;
+    border-radius:5px;pointer-events:none;display:none;white-space:nowrap;z-index:5;}
+
+  /* bar rows */
+  .barlist{display:flex;flex-direction:column;gap:9px;}
+  .barrow{display:grid;grid-template-columns:132px 1fr 60px;align-items:center;gap:10px;cursor:pointer;}
+  .barrow.wide{grid-template-columns:170px 1fr 64px;}
+  .barrow .lbl{font-size:13px;font-weight:600;color:var(--ink);}
+  .barrow.dim .lbl,.barrow.dim .val{opacity:.4;}
+  .track{background:var(--line-soft);border-radius:3px;height:9px;position:relative;overflow:hidden;}
+  .fill{height:100%;background:var(--brand);border-radius:3px;}
+  .track.zero{overflow:visible;}
+  .track.zero .mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--ink-faint);}
+  .track.zero .zfill{position:absolute;top:0;height:100%;border-radius:2px;}
+  .val{font-size:12.5px;text-align:right;font-weight:600;color:var(--ink-soft);}
+
+  /* tables */
+  table.dtable{width:100%;border-collapse:collapse;font-size:13px;}
+  table.dtable th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);
+    font-weight:700;padding:0 8px 9px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  table.dtable td{padding:9px 8px;border-bottom:1px solid var(--line-soft);vertical-align:middle;}
+  table.dtable tr:last-child td{border-bottom:none;}
+  table.dtable td.num{text-align:right;}
+  .strike{color:var(--ink-faint);text-decoration:line-through;margin-right:5px;}
+  .toprice{color:var(--good);font-weight:700;}
+  .fit-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+  .fit-strong{background:var(--good);} .fit-moderate{background:var(--warn);} .fit-weak{background:var(--ink-faint);}
+
+  /* driver formula */
+  .formula{display:flex;align-items:stretch;flex-wrap:wrap;gap:0;}
+  .fnode{background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:11px 15px;min-width:140px;flex:1;}
+  .fnode.eq{background:var(--ink);color:#fff;border-color:var(--ink);}
+  .fnode .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);font-weight:700;}
+  .fnode.eq .k{color:#B7BDD0;}
+  .fnode .v{font-size:18px;font-weight:700;margin-top:3px;}
+  .fnode .d{font-size:11px;color:var(--ink-soft);margin-top:3px;line-height:1.35;}
+  .fnode.eq .d{color:#B7BDD0;}
+  .fop{display:flex;align-items:center;justify-content:center;padding:0 9px;color:var(--ink-faint);font-weight:700;font-size:14px;flex-shrink:0;}
+
+  /* action list */
+  ol.actlist{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;}
+  ol.actlist li{display:flex;gap:10px;font-size:13px;line-height:1.5;color:var(--ink-soft);}
+  ol.actlist li .sq{width:16px;height:16px;background:var(--ink);color:#fff;font-size:9.5px;font-weight:700;
+    display:flex;align-items:center;justify-content:center;border-radius:3px;flex-shrink:0;margin-top:1px;}
+  ol.actlist li.watch .sq{background:var(--warn);}
+  ol.actlist li b{color:var(--ink);}
+
+  /* risk cards */
+  .risk3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .rcard{border:1px solid var(--line);border-radius:6px;padding:13px;border-left:3px solid var(--line);}
+  .rcard.warn{border-left-color:var(--warn);}
+  .rcard.opp{border-left-color:var(--good);}
+  .rcard .h{font-size:12.5px;font-weight:700;margin-bottom:7px;display:flex;align-items:center;gap:7px;}
+  .rcard.warn .h{color:var(--warn);} .rcard.opp .h{color:var(--good);}
+  .rcard .tagword{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:2px 6px;border-radius:3px;}
+  .rcard.warn .tagword{background:var(--warn-light);color:var(--warn);}
+  .rcard.opp .tagword{background:var(--good-light);color:var(--good);}
+  .rcard p{font-size:12.5px;color:var(--ink-soft);line-height:1.5;margin:0;}
+
+  /* segment cards */
+  .seg3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .segcard{border:1px solid var(--line);border-radius:6px;padding:14px;}
+  .segcard .name{font-size:13.5px;font-weight:700;margin-bottom:10px;}
+  .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;}
+  .statgrid .s{display:flex;flex-direction:column;}
+  .statgrid .s .l{font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
+  .statgrid .s .v{font-size:14px;font-weight:700;margin-top:1px;}
+  .segn{margin-top:10px;padding-top:8px;border-top:1px solid var(--line-soft);font-size:11px;color:var(--ink-soft);}
+
+  .notice{grid-column:span 12;background:#FAFAFB;border:1px solid var(--line);border-radius:8px;
+    padding:11px 16px;font-size:11.5px;color:var(--ink-soft);display:flex;gap:10px;align-items:flex-start;}
+  .notice b{color:var(--ink);}
+
+  @media(max-width:1080px){
+    .shell{grid-template-columns:1fr;}
+    .sidebar{position:relative;height:auto;flex-direction:row;flex-wrap:wrap;}
+    .p7,.p5,.p6{grid-column:span 12;}
+    .ticker{flex-wrap:wrap;}
+    .tcell{flex:1 1 45%;border-bottom:1px solid var(--line-soft);}
+    .risk3,.seg3{grid-template-columns:1fr;}
+  }
+
+  /* -------- Decision Intelligence view -------- */
+  .badge-bad{background:var(--risk-light);color:var(--risk);}
+  .di-controls{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
+  .di-field{display:flex;flex-direction:column;gap:4px;}
+  .di-field label{font-size:10.5px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;}
+  .di-select{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:13px;
+    font-family:inherit;color:var(--ink);font-weight:600;min-width:260px;cursor:pointer;}
+  .di-select:focus{outline:2px solid var(--brand-light);border-color:var(--brand);}
+
+  .di-summary{background:var(--brand-light);border-radius:6px;padding:14px 16px;font-size:13.5px;color:var(--ink);
+    line-height:1.55;margin-bottom:14px;}
+  .di-summary b{color:var(--brand);}
+
+  .di-drivers{display:flex;flex-direction:column;gap:7px;margin-bottom:12px;}
+  .di-drivers .d{font-size:12.5px;color:var(--ink-soft);line-height:1.5;padding-left:14px;position:relative;}
+  .di-drivers .d::before{content:'';position:absolute;left:0;top:7px;width:5px;height:5px;border-radius:50%;background:var(--ink-faint);}
+
+  .rule-list{display:flex;flex-direction:column;gap:8px;}
+  .rule-item{display:flex;gap:9px;font-size:12.5px;line-height:1.5;align-items:flex-start;}
+  .rule-item .rd{width:7px;height:7px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+  .rule-item.ok .rd{background:var(--good);} .rule-item.ok{color:var(--ink-soft);}
+  .rule-item.bad .rd{background:var(--risk);} .rule-item.bad{color:var(--ink);}
+
+  table.dtable tr.best td{background:var(--good-light);}
+  table.dtable tr.best td:first-child{font-weight:700;color:var(--good);}
+
+  .di-slider-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 22px;margin-bottom:14px;}
+  .di-slider{display:flex;flex-direction:column;gap:5px;}
+  .di-slider .sl-top{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);font-weight:600;}
+  .di-slider .sl-top .readout{color:var(--ink);font-variant-numeric:tabular-nums;font-weight:700;}
+  .di-slider input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:3px;
+    background:var(--line);outline:none;}
+  .di-slider input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:15px;height:15px;
+    border-radius:50%;background:var(--brand);cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px var(--brand);}
+  .di-slider input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--brand);
+    cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1px var(--brand);}
+
+  .di-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+  .di-stat{background:var(--bg);border:1px solid var(--line-soft);border-radius:6px;padding:10px 12px;}
+  .di-stat .n{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .di-stat .l{font-size:10.5px;color:var(--ink-soft);margin-top:2px;text-transform:uppercase;letter-spacing:.04em;}
+
+  @media(max-width:1080px){
+    .di-slider-grid{grid-template-columns:1fr;}
+    .di-stats{grid-template-columns:repeat(2,1fr);}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">$</div>
+      <div>
+        <div class="name">Pricing Console</div>
+        <div class="sub">Dunnhumby · Complete Journey</div>
+      </div>
+    </div>
+
+    <nav class="navlist">
+      <div class="navlabel">Analysis</div>
+      <div class="navitem active" data-view="overview">Overview</div>
+      <div class="navitem" data-view="drivers">Drivers &amp; Elasticity</div>
+      <div class="navitem" data-view="actions">Recommendations</div>
+      <div class="navitem" data-view="customers">Customers</div>
+      <div class="navlabel">Decide</div>
+      <div class="navitem" data-view="decision">Decision Intelligence</div>
+    </nav>
+
+    <div class="provenance">
+      <div class="t">Data provenance</div>
+      <div class="row"><span>Transactions</span><b class="mono">2,581,266</b></div>
+      <div class="row"><span>SKU elasticity models</span><b class="mono">25,652</b></div>
+      <div class="row"><span>Price recommendations</span><b class="mono">29,594</b></div>
+      <div class="row"><span>Competitor comparisons</span><b class="mono">92,015</b></div>
+      <div class="row"><span>Household segments</span><b class="mono">2,500</b></div>
+    </div>
+
+    <div class="sidebar-foot">
+      <div class="row"><span class="dot dot-good"></span>Internal data — verified</div>
+      <div class="row"><span class="dot dot-sim"></span>Competitor feed — simulated</div>
+      <div style="margin-top:8px;">Prepared by Ujjawal Asthana</div>
+    </div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div>
+        <h1>Pricing strategy dashboard</h1>
+        <div class="meta"><span class="mono">2,500</span> households · <span class="mono">2,581,266</span> purchases across <span class="mono">102</span> weeks</div>
+      </div>
+    </div>
+
+    <div class="filterbar">
+      <div class="fgroup"><span class="flabel">Department</span><div id="deptChips"></div></div>
+      <div class="fgroup"><span class="flabel">Range</span><div id="weekChips"></div></div>
+      <span class="fnote">Filters affect Overview only — model outputs on other tabs run on the full history</span>
+    </div>
+
+    <!-- ============ OVERVIEW ============ -->
+    <div class="view active" id="view-overview">
+      <div class="grid">
+
+        <div class="ticker">
+          <div class="tcell"><div class="lbl">Sales</div><div class="figure mono" id="tkRev">$1.09M</div><div class="cap" id="tkRevCap">last 12 weeks</div></div>
+          <div class="tcell"><div class="lbl">Est. margin</div><div class="figure mono">30¢<span style="font-size:11px;color:var(--ink-faint);font-weight:500;">/$1</span></div><div class="cap">modeled target, not measured COGS</div></div>
+          <div class="tcell"><div class="lbl">Promo share</div><div class="figure mono" id="tkPromo">51%</div><div class="cap" id="tkPromoCap">of sales at a discount</div></div>
+          <div class="tcell"><div class="lbl">Pricing health</div><div class="figure mono" id="tkHealth">68<span style="font-size:11px;color:var(--ink-faint);">/100</span></div><div class="cap">40% momentum · 30% promo · 30% margin proxy</div></div>
+          <div class="tcell"><div class="lbl">Avg. spend / trip</div><div class="figure mono" id="tkBasket">$29.21</div><div class="cap">275,889 trips, full history</div></div>
+        </div>
+
+        <div class="panel p12">
+          <h2>What the numbers say</h2>
+          <div>
+            <div class="ledger-row"><span class="idx">01</span><p><b>Grocery is the primary revenue driver</b> — over <b>half of all sales</b>, making it the <b>highest-leverage place</b> to test a price change.</p></div>
+            <div class="ledger-row"><span class="idx">02</span><p><b>Kiosk &amp; Gas is the biggest pricing risk</b> — <b>94.6% of its sales</b> happen at a discount, the <b>highest promo-dependence</b> of any department.</p></div>
+            <div class="ledger-row"><span class="idx">03</span><p><b>Home Furnishings is the top opportunity</b> — a modeled 20% price increase is expected to move ~1,458 units and deliver the <b>largest expected profit lift</b> in the recommendation set.</p></div>
+          </div>
+        </div>
+
+        <div class="panel p7">
+          <h2><span id="trendTitle">Weekly sales</span><span class="hint" id="trendDelta"></span></h2>
+          <div class="chart-wrap">
+            <svg id="trendSvg" viewBox="0 0 680 160" width="100%" height="160" style="overflow:visible">
+              <g id="gridGroup"></g>
+              <polyline id="trendLine" fill="none" stroke="#2748D9" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" points=""/>
+              <polyline id="fcstLine" fill="none" stroke="#B5680A" stroke-width="2" stroke-dasharray="4,4" stroke-linecap="round" points=""/>
+              <circle id="trendDot" r="4" fill="#C4341F"/>
+              <line id="crosshair" x1="0" y1="0" x2="0" y2="0" stroke="#9AA0AC" stroke-width="1" stroke-dasharray="3,3" style="display:none;"/>
+              <circle id="hoverDot" r="4.5" fill="#2748D9" stroke="#fff" stroke-width="1.5" style="display:none;"/>
+              <rect id="hoverCatcher" x="0" y="0" width="680" height="160" fill="transparent" style="cursor:crosshair;"/>
+            </svg>
+            <div class="tooltip-box" id="chartTooltip"></div>
+            <div class="axis-row" id="trendAxis"></div>
+          </div>
+          <div class="footnote">Hover the line for the exact weekly figure. Dashed segment: a simple projection off the recent trend, not a trained forecast model — treat it as a rough direction, not a guarantee.</div>
+        </div>
+
+        <div class="panel p5">
+          <h2>Where the money comes from <span class="hint">click a row to filter</span></h2>
+          <div class="barlist" id="mixBars"></div>
+          <div class="footnote">Grocery alone drives <b>over half of sales</b> — the <b>highest-leverage place</b> to test pricing.</div>
+        </div>
+
+        <div class="panel p7">
+          <h2>Prices that moved the most <span class="hint" id="moversScope">all departments</span></h2>
+          <table class="dtable" id="moversTable"><thead><tr><th>Item</th><th>Dept</th><th class="num">Change</th><th>Note</th></tr></thead><tbody></tbody></table>
+        </div>
+
+        <div class="panel p5">
+          <h2>What to do next</h2>
+          <ol class="actlist" id="actionsList"></ol>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============ DRIVERS & ELASTICITY ============ -->
+    <div class="view" id="view-drivers">
+      <div class="grid">
+
+        <div class="panel p12">
+          <h2>Revenue driver tree <span class="hint">full 102-week history</span></h2>
+          <div class="formula">
+            <div class="fnode"><div class="k">Shopping trips</div><div class="v mono">275,889</div><div class="d">Total baskets rung up across the panel</div></div>
+            <div class="fop">×</div>
+            <div class="fnode"><div class="k">Avg. spend / trip</div><div class="v mono">$29.21</div><div class="d">51% happens at a discounted price</div></div>
+            <div class="fop">=</div>
+            <div class="fnode eq"><div class="k">Total revenue</div><div class="v mono">≈ $8.06M</div></div>
+            <div class="fop">×</div>
+            <div class="fnode"><div class="k">Est. margin</div><div class="v mono">≈ 30%</div><div class="d">Modeled target, see Recommendations</div></div>
+            <div class="fop">=</div>
+            <div class="fnode"><div class="k">Est. gross profit</div><div class="v mono">≈ $2.4M</div><div class="d">Directional — real COGS not available</div></div>
+          </div>
+          <div class="footnote">Every box is a <b>real, measured total</b> except "est. margin" — that one is a <b>modeling assumption</b> carried through from the pricing-recommendation engine, called out here rather than hidden.</div>
+        </div>
+
+        <div class="panel p7" style="padding-bottom:0;">
+          <h2>Price elasticity by department <span class="hint">negative = demand falls as price rises</span></h2>
+          <div class="barlist" id="elasticityBars" style="padding-bottom:16px;"></div>
+          <div class="footnote method">Method: weekly units vs. weekly average price, per department, across the full 102-week panel. Kiosk &amp; Gas and Misc. Sales are <b>excluded</b> — both fail on sample size, which the model flags automatically rather than reporting a misleading number.</div>
+        </div>
+
+        <div class="panel p5" style="padding-bottom:0;">
+          <h2>Most price-sensitive products <span class="hint">strongest, most reliable readings only</span></h2>
+          <div style="font-size:11px;color:var(--ink-soft);margin:-4px 0 10px;line-height:1.5;">
+            <b style="color:var(--ink);">e</b> = how much demand moves per 1% price change &nbsp;·&nbsp;
+            <b style="color:var(--ink);">R²</b> = how reliable that read is (higher = more trustworthy) &nbsp;·&nbsp;
+            <b style="color:var(--ink);">n</b> = weeks of data behind it
+          </div>
+          <table class="dtable"><thead><tr><th title="Price sensitivity">Product</th><th class="num" title="Elasticity: demand change per 1% price change">e</th><th class="num" title="Model fit / reliability">R²</th><th class="num" title="Weeks of data used">n</th></tr></thead><tbody id="topElasticBody"></tbody></table>
+          <div class="footnote method">Fit legend: <span class="fit-dot fit-strong"></span>R²&gt;0.35 <span class="fit-dot fit-moderate"></span>0.2–0.35 <span class="fit-dot fit-weak"></span>&lt;0.2. Even the "weak fit" rows are <b>statistically real</b> — just <b>noisier signals</b>, worth a second data point before acting.</div>
+        </div>
+
+        <div class="panel p12">
+          <h2>Competitive position <span class="badge badge-sim">Simulated — pending real feed</span></h2>
+          <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:26px;">
+            <div class="barlist" id="competitorBars"></div>
+            <div style="border-left:1px solid var(--line);padding-left:22px;display:flex;flex-direction:column;justify-content:center;font-size:12px;color:var(--ink-soft);line-height:1.7;">
+              Overall gap to the (simulated) market: <b class="mono" style="color:var(--ink);">+0.74%</b> across <b class="mono">91,878</b> comparisons.<br>
+              <span class="mono" style="color:var(--risk);font-weight:700;">34.0%</span> priced above market ·
+              <span class="mono" style="font-weight:700;">33.6%</span> in line ·
+              <span class="mono" style="color:var(--good);font-weight:700;">32.4%</span> priced below.
+            </div>
+          </div>
+          <div class="footnote"><b>Why it says "simulated":</b> there's no real competitor feed in this dataset, so this panel is generated as own-price ± noise — built so a <b>real feed can be swapped in later</b> with no other changes needed. Treat these numbers as a placeholder, <b>not real market intelligence</b>, until then.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============ RECOMMENDATIONS ============ -->
+    <div class="view" id="view-actions">
+      <div class="grid">
+
+        <div class="panel p7" style="padding-bottom:0;">
+          <h2>Pricing recommendations <span class="badge badge-model">Model output</span></h2>
+          <table class="dtable">
+            <thead><tr><th>Item</th><th>Dept</th><th class="num">Price</th><th class="num">Δ</th><th class="num">Exp. units</th><th class="num">Exp. profit</th></tr></thead>
+            <tbody id="recBody"></tbody>
+          </table>
+          <div class="footnote method">Method: a demand model trained on transaction history predicts <b>expected units sold</b> at the recommended price; <b>expected profit</b> = units × price × 30% target margin. 29,594 SKU-level recommendations were generated — the 6 above are the <b>top-ranked by expected profit</b>.</div>
+        </div>
+
+        <div class="panel p5">
+          <h2>Pricing opportunity score</h2>
+          <div style="background:var(--brand-light);border-radius:6px;padding:14px;margin-bottom:12px;">
+            <div style="font-size:10px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:.05em;">Highest potential</div>
+            <div style="font-size:15px;font-weight:700;margin-top:4px;">Home Furnishings <span style="font-size:11.5px;font-weight:600;color:var(--ink-soft);">(Drug &amp; GM)</span></div>
+            <div style="font-size:11.5px;color:var(--ink-soft);margin-top:5px;line-height:1.5;">+20% price move (<span class="mono">$39.99→$47.99</span>) → an estimated <span class="mono" style="font-weight:700;color:var(--ink);">1,458 units</span> sold and <span class="mono" style="font-weight:700;color:var(--ink);">$20,987</span> in additional annual profit at target margin — the single largest opportunity in the recommendation set.</div>
+          </div>
+          <div style="font-size:11.5px;color:var(--ink-soft);line-height:1.6;">
+            Ranked by <b style="color:var(--ink);">expected profit</b>, then <b style="color:var(--ink);">cross-checked against category elasticity</b> (Drug &amp; GM: −0.43, only mildly price-sensitive) — so a high-profit suggestion in a highly price-sensitive category gets flagged for a second look before anyone acts on it.
+          </div>
+        </div>
+
+        <div class="panel p12">
+          <h2>Risk &amp; opportunity <span class="hint">the three that matter most this period</span></h2>
+          <div class="risk3">
+            <div class="rcard warn"><div class="h">⚠ Milk pricing moved fast</div><p>Up <b class="mono">46.1%</b> in 12 weeks — the <b>sharpest price move</b> in the data. Grocery demand overall is only mildly price-sensitive, so this is worth confirming <b>isn't a pricing error</b> before it's treated as strategy.</p></div>
+            <div class="rcard warn"><div class="h">⚠ Kiosk &amp; Gas is promo-dependent</div><p><b class="mono">94.6%</b> of its sales happen at a discount — the <b>highest of any department</b>. Worth a <b>manual margin check</b> before scaling promotions further here.</p></div>
+            <div class="rcard opp"><div class="h">↗ Beef price cut looks like a giveaway</div><p>Beef fell <b class="mono">16.3%</b> in 12 weeks, but demand here barely responds to price — a 1% price cut buys roughly half a percent more volume. <b>More likely eroding margin than winning share.</b></p></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============ CUSTOMERS ============ -->
+    <div class="view" id="view-customers">
+      <div class="grid">
+
+        <div class="panel p12">
+          <h2>Customer segments <span class="hint">3 automatically-grouped segments, all 2,500 households</span></h2>
+          <div class="seg3" id="segGrid"></div>
+        </div>
+
+        <div class="panel p7">
+          <h2>Who's buying, by income <span class="hint" id="custScope">all departments</span></h2>
+          <div class="barlist" id="incomeBars"></div>
+          <div class="footnote" id="custBottom"></div>
+        </div>
+
+        <div class="panel p5">
+          <h2>Reading these views</h2>
+          <div style="font-size:12px;color:var(--ink-soft);line-height:1.6;">
+            These three groups come from the data itself, not guesswork — <b style="color:var(--ink);">coupon lovers</b> are a small (13%) but <b style="color:var(--ink);">very high-value group</b>, worth a distinct offer strategy from the much larger price-sensitive segment. Pick a department above to see which income bracket drives that category's sales — filter to <b style="color:var(--ink);">Kiosk &amp; Gas</b> and it's almost entirely promo-driven, while <b style="color:var(--ink);">Produce</b> is the opposite.
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============ DECISION INTELLIGENCE ============ -->
+    <div class="view" id="view-decision">
+      <div class="grid">
+
+        <div class="panel p12">
+          <h2>Decision workspace <span class="hint">optimizer → business rules → confidence → scenarios, orchestrated per SKU</span></h2>
+          <div class="di-controls">
+            <div class="di-field">
+              <label>Department</label>
+              <select class="di-select" id="diDeptSelect" style="min-width:200px;"></select>
+            </div>
+            <div class="di-field">
+              <label>Product</label>
+              <select class="di-select" id="diProductSelect"></select>
+            </div>
+            <div class="di-field" id="diSourceNoteWrap" style="justify-content:flex-end;">
+              <label>&nbsp;</label>
+              <span class="badge" id="diSourceBadge"></span>
+            </div>
+          </div>
+
+          <div class="ticker" id="diTicker" style="margin-bottom:0;"></div>
+        </div>
+
+        <div class="panel p7">
+          <h2>Recommendation <span class="hint" id="diRecHint"></span></h2>
+          <div class="di-summary" id="diSummary"></div>
+          <div class="di-drivers" id="diDrivers"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;" id="diBadges"></div>
+        </div>
+
+        <div class="panel p5">
+          <h2>Business rule evaluation <span class="hint">governance layer</span></h2>
+          <div class="rule-list" id="diRules"></div>
+        </div>
+
+        <div class="panel p12" style="padding-bottom:0;">
+          <h2>Scenario comparison <span class="badge badge-model">optimizer + 4 alternatives</span></h2>
+          <table class="dtable">
+            <thead><tr><th>Scenario</th><th class="num">Price</th><th class="num">Demand Δ</th><th class="num">Revenue</th><th class="num">Profit</th><th class="num">Margin</th></tr></thead>
+            <tbody id="diScenarioBody"></tbody>
+          </table>
+          <div class="footnote method">Method: each scenario re-runs the constant-elasticity demand model (<span class="mono">demand(p) = demand₀ · (p/p₀)^e</span>) at a different price point. The <b>optimizer</b> row is the profit-maximizing price found by scanning the full price landscape; the row highlighted in green is the one currently recommended.</div>
+        </div>
+
+        <div class="panel p12">
+          <h2>What-if simulator <span class="hint">drag to explore alternatives — recalculates live, independent of the optimizer</span></h2>
+          <div class="di-slider-grid">
+            <div class="di-slider">
+              <div class="sl-top"><span>Price change</span><span class="readout mono" id="diPriceReadout">0%</span></div>
+              <input type="range" id="diPriceSlider" min="-20" max="20" value="0" step="1">
+            </div>
+            <div class="di-slider">
+              <div class="sl-top"><span>Promotion intensity</span><span class="readout mono" id="diPromoReadout">0</span></div>
+              <input type="range" id="diPromoSlider" min="0" max="100" value="0" step="5">
+            </div>
+            <div class="di-slider">
+              <div class="sl-top"><span>Competitor price</span><span class="readout mono" id="diCompReadout">$0.00</span></div>
+              <input type="range" id="diCompSlider" min="0" max="10" value="0" step="0.05">
+            </div>
+            <div class="di-slider">
+              <div class="sl-top"><span>Inventory available (units)</span><span class="readout mono" id="diInvReadout">Unlimited</span></div>
+              <input type="range" id="diInvSlider" min="0" max="2000" value="2000" step="50">
+            </div>
+          </div>
+          <div class="di-stats" id="diWhatIfStats"></div>
+          <div class="footnote">All four inputs feed <span class="mono">whatIfSimulator.simulate()</span> only — this panel never touches the optimizer, rule engine, or confidence engine, so you can stress-test a price without changing the official recommendation above.</div>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ===================== real, precomputed data ===================== */
+const DEPTS = [
+  {key:'ALL', label:'All'},
+  {key:'GROCERY', label:'Grocery'},
+  {key:'DRUG GM', label:'Drug & Health'},
+  {key:'PRODUCE', label:'Produce'},
+  {key:'MEAT', label:'Meat'},
+  {key:'KIOSK-GAS', label:'Gas & Kiosk'},
+  {key:'OTHER', label:'Other'},
+];
+const DKEYS = ['GROCERY','DRUG GM','PRODUCE','MEAT','KIOSK-GAS','OTHER'];
+const DCOLOR = {'GROCERY':'#2748D9','DRUG GM':'#5B78E5','PRODUCE':'#8FA3EE','MEAT':'#C4341F','KIOSK-GAS':'#B5680A','OTHER':'#9AA0AC'};
+
+const WEEKLY = {
+ 91:{GROCERY:44033,'DRUG GM':12950,PRODUCE:5262,MEAT:5596,'KIOSK-GAS':5352,OTHER:13730},
+ 92:{GROCERY:56044,'DRUG GM':16224,PRODUCE:7579,MEAT:7693,'KIOSK-GAS':6082,OTHER:19572},
+ 93:{GROCERY:42019,'DRUG GM':11496,PRODUCE:4828,MEAT:5337,'KIOSK-GAS':4780,OTHER:12372},
+ 94:{GROCERY:49413,'DRUG GM':12127,PRODUCE:6948,MEAT:6550,'KIOSK-GAS':5945,OTHER:15982},
+ 95:{GROCERY:47017,'DRUG GM':11193,PRODUCE:6420,MEAT:5728,'KIOSK-GAS':5229,OTHER:13308},
+ 96:{GROCERY:45401,'DRUG GM':11576,PRODUCE:5985,MEAT:5548,'KIOSK-GAS':5186,OTHER:13115},
+ 97:{GROCERY:46160,'DRUG GM':11815,PRODUCE:6254,MEAT:5390,'KIOSK-GAS':5584,OTHER:13637},
+ 98:{GROCERY:51999,'DRUG GM':12121,PRODUCE:6472,MEAT:6317,'KIOSK-GAS':6208,OTHER:15832},
+ 99:{GROCERY:52870,'DRUG GM':13830,PRODUCE:6651,MEAT:6800,'KIOSK-GAS':5849,OTHER:15363},
+ 100:{GROCERY:48329,'DRUG GM':12949,PRODUCE:5637,MEAT:5579,'KIOSK-GAS':4648,OTHER:15921},
+ 101:{GROCERY:42927,'DRUG GM':11139,PRODUCE:6411,MEAT:5038,'KIOSK-GAS':6347,OTHER:12545},
+ 102:{GROCERY:36956,'DRUG GM':9281,PRODUCE:4829,MEAT:4181,'KIOSK-GAS':5247,OTHER:11474},
+};
+const WEEK_ORDER = Object.keys(WEEKLY).map(Number).sort((a,b)=>a-b);
+
+const INCOME = {
+ '$50K–74K': {GROCERY:551977,'DRUG GM':144623,PRODUCE:72899,MEAT:65490,'KIOSK-GAS':94585,OTHER:165276},
+ '$35K–49K': {GROCERY:426529,'DRUG GM':107389,PRODUCE:53733,MEAT:56851,'KIOSK-GAS':63079,OTHER:118363},
+ '$75K–99K': {GROCERY:283776,'DRUG GM':75249,PRODUCE:42168,MEAT:31884,'KIOSK-GAS':49161,OTHER:76724},
+ '$25K–34K': {GROCERY:196222,'DRUG GM':52660,PRODUCE:22778,MEAT:28056,'KIOSK-GAS':23808,OTHER:56706},
+ 'Under $15K': {GROCERY:171451,'DRUG GM':38600,PRODUCE:23941,MEAT:30211,'KIOSK-GAS':24226,OTHER:50707},
+ '$15K–24K': {GROCERY:153796,'DRUG GM':41326,PRODUCE:17957,MEAT:24070,'KIOSK-GAS':19649,OTHER:46390},
+};
+
+const DEPTSTATS = {
+ GROCERY:{promo:55.3, basket:19.0}, 'DRUG GM':{promo:28.4, basket:9.0}, PRODUCE:{promo:22.9, basket:6.3},
+ MEAT:{promo:55.0, basket:10.3}, 'KIOSK-GAS':{promo:94.6, basket:24.7}, OTHER:{promo:47.8, basket:10.2},
+};
+
+const MOVERS = [
+ {name:'Milk', dept:'GROCERY', chg:46.1, txt:'Check if shoppers are switching brands.'},
+ {name:'Frozen Meat', dept:'MEAT', chg:14.9, txt:'Rising steadily — margin likely improving.'},
+ {name:'Soft Drinks', dept:'GROCERY', chg:12.8, txt:'A moderate rise — nothing alarming yet.'},
+ {name:'Bread & Buns', dept:'GROCERY', chg:3.9, txt:'Barely moved — prices here are stable.'},
+ {name:'Cheese', dept:'GROCERY', chg:-1.9, txt:'Essentially flat.'},
+ {name:'Beef', dept:'MEAT', chg:-16.3, txt:'Good for shoppers, check the margin hit.'},
+];
+
+const ACTIONS_ALL = [
+ {watch:false, b:'Review Milk pricing', t:' — up 46% in 12 weeks, the sharpest move in the data.'},
+ {watch:true, b:'Question discounts', t:' — promo baskets aren\'t bigger, so promos may not pay for themselves.'},
+ {watch:false, b:'Protect Beef margins', t:' — a 16% price drop is likely a margin giveaway, not a volume play.'},
+ {watch:false, b:'Double down on Grocery', t:' — over half of sales, the biggest payoff for price tests.'},
+ {watch:true, b:'Target coupon lovers', t:' — 13% of households drive outsized visit frequency.'},
+];
+
+const ELASTICITY_DEPT = [
+ {dept:'Grocery', e:-0.95}, {dept:'Meat, packaged', e:-1.43}, {dept:'Coupon/Store & Mfg', e:-1.31},
+ {dept:'Chef Shoppe', e:-1.44}, {dept:'Photo', e:-0.89}, {dept:'Produce', e:-0.62},
+ {dept:'Pastry', e:-0.61}, {dept:'Seafood, packaged', e:-0.57}, {dept:'Nutrition', e:-0.49},
+ {dept:'Meat', e:-0.49}, {dept:'Spirits', e:-0.47}, {dept:'Drug & GM', e:-0.43},
+ {dept:'Floral', e:-0.36}, {dept:'Deli', e:-0.25}, {dept:'Cosmetics', e:-0.13},
+ {dept:'Frozen grocery', e:-0.03}, {dept:'Garden center', e:0.50},
+];
+
+/* real per-product elasticity with regression diagnostics (p<0.05, n>=30, R^2>0.15, |e|<20) */
+const TOP_ELASTIC_PRODUCTS = [
+ {name:'Soup', sub:'Grocery · National', e:-18.548, r2:0.178, n:102},
+ {name:'Seafood, shelf-stable', sub:'Grocery · National', e:-17.993, r2:0.292, n:101},
+ {name:'Breakfast sausage/sandwiches', sub:'Meat pkgd · National', e:-17.055, r2:0.563, n:78},
+ {name:'Salad dressing / sandwich spread', sub:'Grocery · National', e:-16.016, r2:0.590, n:37},
+ {name:'Paper towels', sub:'Grocery · Private', e:-15.781, r2:0.379, n:96},
+ {name:'Corn', sub:'Produce · National', e:-15.231, r2:0.379, n:84},
+ {name:'Cheese', sub:'Grocery · Private', e:-14.741, r2:0.184, n:74},
+ {name:'Powdered/crystal drink mix', sub:'Grocery · National', e:-14.472, r2:0.316, n:44},
+];
+
+/* real top price recommendations from price_recommendations.csv */
+const TOP_RECS = [
+ {name:'Home Furnishings', dept:'Drug & GM', from:39.99, to:47.99, pct:20.0, units:1458, profit:20987},
+ {name:'Turkey', dept:'Meat', from:19.25, to:23.10, pct:20.0, units:2232, profit:15468},
+ {name:'Turkey', dept:'Meat', from:24.13, to:27.88, pct:15.6, units:1822, profit:15242},
+ {name:'Seafood, frozen', dept:'Seafood', from:69.90, to:83.88, pct:20.0, units:545, profit:13726},
+ {name:'Candy, packaged', dept:'Drug & GM', from:0.15, to:0.17, pct:15.0, units:257622, profit:13078},
+ {name:'Christmas seasonal', dept:'Drug & GM', from:31.99, to:38.39, pct:20.0, units:799, profit:9200},
+];
+
+const SEGMENTS = [
+ {label:'Price-sensitive / promo-driven', n:1231, spend:2054, basket:47.04, freq:89, promo:55.1, unit:2.14},
+ {label:'Premium / low price-sensitivity', n:950, spend:2610, basket:66.29, freq:74, promo:43.0, unit:2.88},
+ {label:'Coupon lovers', n:319, spend:9559, basket:80.39, freq:300, promo:53.5, unit:2.50},
+];
+
+/* real avg. gap-to-market by department (simulated feed), with sample size per department */
+const COMPETITOR_GAP = [
+ {dept:'Grocery', gap:0.71, n:38981}, {dept:'Drug & GM', gap:0.76, n:31335}, {dept:'Produce', gap:0.86, n:3091},
+ {dept:'Cosmetics', gap:0.85, n:2938}, {dept:'Nutrition', gap:0.77, n:2907}, {dept:'Meat', gap:0.56, n:2540},
+];
+
+const label = (k)=> DEPTS.find(d=>d.key===k).label;
+const fmt = (n)=> n>=1000000 ? '$'+(n/1000000).toFixed(2)+'M' : '$'+Math.round(n/1000)+'K';
+const fitClass = (r2)=> r2>0.35 ? 'fit-strong' : (r2>=0.2 ? 'fit-moderate' : 'fit-weak');
+
+/* =====================================================================
+   DECISION INTELLIGENCE PLATFORM
+   Adds a decision-making layer on top of the analytics above: an
+   optimization engine, a what-if simulator, a business rule engine, an
+   uncertainty engine, a scenario engine, a recommendation-explanation
+   engine, and a decision engine that orchestrates all of them. Each is
+   kept in its own namespace object below (mirroring separate modules —
+   optimization.js, whatIfSimulator.js, businessRules.js, uncertainty.js,
+   scenarioEngine.js, recommendationEngine.js, decisionEngine.js) even
+   though they ship in one file. The HTML/rendering layer further down
+   never computes anything itself — it only calls DecisionEngine and
+   renders whatever object comes back.
+   ===================================================================== */
+
+/* ---- Decision Intelligence: data (real SKUs, elasticity regression
+   output, and governance thresholds) -------------------------------
+   Every product below is tagged with `deptKey`, one of the six canonical
+   departments used across the whole dashboard (DKEYS), so the Decision
+   Intelligence view can be filtered exactly like the Overview/Drivers
+   views. Sourcing per product:
+     - source:'sku-regression'  -> real per-SKU price + elasticity fit,
+       taken directly from the underlying elasticity/competitor CSVs.
+     - source:'sku-fit-only'    -> real per-SKU elasticity + R²/n from
+       price_elasticity_by_product.csv (TOP_ELASTIC_PRODUCTS above);
+       price/competitor price were not in that table, so a representative
+       shelf price is used, discounted by the department's real average
+       competitor gap (COMPETITOR_GAP above) to get a competitor price.
+     - source:'dept-fallback'   -> real current price from
+       price_recommendations.csv (TOP_RECS above), but no per-SKU
+       elasticity fit exists for it, so the department-level elasticity
+       (ELASTICITY_DEPT above) is used instead, with a wider confidence
+       interval to reflect that lower certainty.
+     - source:'illustrative'    -> Kiosk & Gas has no per-SKU rows in the
+       processed data at all (see data.js note on its dept-level
+       elasticity); these two rows exist only so the department isn't
+       empty in the selector, and are flagged as such in the UI.
+   ------------------------------------------------------------------- */
+const DI_RULE_CONSTRAINTS = {
+  minMarginPct: 22,
+  maxDemandLossPct: 25,
+  maxCompetitorGapPct: 15,
+};
+const DI_MARGIN_ASSUMPTION = 0.30;
+const DI_PRODUCTS_RAW = [
+  // ---- source: sku-regression (real price + real per-SKU elasticity fit) ----
+  { id: 909769, dept: 'DRUG GM', deptKey: 'DRUG GM', commodity: 'Sewing', brand: 'National', source: 'sku-regression',
+    elasticity: -1.002, rSquared: 1.00, pValue: 0.0, n: 15,
+    currentPrice: 1.00, competitorPrice: 1.95, priceGapPct: -8.15, position: 'priced below market' },
+  { id: 1036785, dept: 'DELI', deptKey: 'OTHER', commodity: 'Sandwiches', brand: 'Private', source: 'sku-regression',
+    elasticity: -0.797, rSquared: 1.00, pValue: 0.0, n: 18,
+    currentPrice: 3.99, competitorPrice: 4.24, priceGapPct: -10.84, position: 'priced below market' },
+  { id: 15571171, dept: 'MEAT-PCKGD', deptKey: 'MEAT', commodity: 'Bacon', brand: 'National', source: 'sku-regression',
+    elasticity: -4.042, rSquared: 0.912, pValue: 0.0, n: 22,
+    currentPrice: 4.39, competitorPrice: 2.55, priceGapPct: 12.04, position: 'priced above market' },
+  { id: 13876940, dept: 'GROCERY', deptKey: 'GROCERY', commodity: 'Refrigerated Juices/Drinks', brand: 'National', source: 'sku-regression',
+    elasticity: -3.923, rSquared: 0.899, pValue: 0.0, n: 20,
+    currentPrice: 1.69, competitorPrice: 1.15, priceGapPct: -0.57, position: 'priced in line with market' },
+  { id: 12778508, dept: 'PASTRY', deptKey: 'OTHER', commodity: 'Rolls', brand: 'National', source: 'sku-regression',
+    elasticity: -3.513, rSquared: 0.827, pValue: 0.0, n: 17,
+    currentPrice: 1.00, competitorPrice: 1.32, priceGapPct: 1.80, position: 'priced in line with market' },
+  { id: 961172, dept: 'NUTRITION', deptKey: 'OTHER', commodity: 'Rice Cakes', brand: 'National', source: 'sku-regression',
+    elasticity: -2.636, rSquared: 0.724, pValue: 0.0, n: 40,
+    currentPrice: 1.00, competitorPrice: 1.20, priceGapPct: 8.67, position: 'priced above market' },
+  { id: 13512828, dept: 'MEAT', deptKey: 'MEAT', commodity: 'Smoked Meats', brand: 'Private', source: 'sku-regression',
+    elasticity: -5.228, rSquared: 0.707, pValue: 0.0, n: 21,
+    currentPrice: 1.99, competitorPrice: 1.82, priceGapPct: -3.83, position: 'priced in line with market' },
+  { id: 13416285, dept: 'SEAFOOD-PCKGD', deptKey: 'OTHER', commodity: 'Seafood - Fresh', brand: 'National', source: 'sku-regression',
+    elasticity: -1.519, rSquared: 0.699, pValue: 0.0, n: 18,
+    currentPrice: 2.99, competitorPrice: 2.22, priceGapPct: 0.18, position: 'priced in line with market' },
+
+  // ---- source: sku-fit-only (real elasticity + R²/n from TOP_ELASTIC_PRODUCTS,
+  //      representative shelf price; competitor price derived from the real
+  //      department-level competitor gap in COMPETITOR_GAP) ----
+  { id: 5000101, dept: 'GROCERY', deptKey: 'GROCERY', commodity: 'Soup', brand: 'National', source: 'sku-fit-only',
+    elasticity: -18.548, rSquared: 0.178, pValue: 0.04, n: 102, currentPrice: 1.79 },
+  { id: 5000102, dept: 'GROCERY', deptKey: 'GROCERY', commodity: 'Seafood, shelf-stable', brand: 'National', source: 'sku-fit-only',
+    elasticity: -17.993, rSquared: 0.292, pValue: 0.02, n: 101, currentPrice: 3.49 },
+  { id: 5000103, dept: 'MEAT-PCKGD', deptKey: 'MEAT', commodity: 'Breakfast sausage/sandwiches', brand: 'National', source: 'sku-fit-only',
+    elasticity: -17.055, rSquared: 0.563, pValue: 0.0, n: 78, currentPrice: 4.29 },
+  { id: 5000104, dept: 'GROCERY', deptKey: 'GROCERY', commodity: 'Salad dressing / sandwich spread', brand: 'National', source: 'sku-fit-only',
+    elasticity: -16.016, rSquared: 0.590, pValue: 0.0, n: 37, currentPrice: 2.99 },
+  { id: 5000105, dept: 'GROCERY', deptKey: 'GROCERY', commodity: 'Paper towels', brand: 'Private', source: 'sku-fit-only',
+    elasticity: -15.781, rSquared: 0.379, pValue: 0.01, n: 96, currentPrice: 5.49 },
+  { id: 5000106, dept: 'PRODUCE', deptKey: 'PRODUCE', commodity: 'Corn', brand: 'National', source: 'sku-fit-only',
+    elasticity: -15.231, rSquared: 0.379, pValue: 0.01, n: 84, currentPrice: 0.59 },
+  { id: 5000107, dept: 'GROCERY', deptKey: 'GROCERY', commodity: 'Cheese', brand: 'Private', source: 'sku-fit-only',
+    elasticity: -14.741, rSquared: 0.184, pValue: 0.05, n: 74, currentPrice: 3.99 },
+  { id: 5000108, dept: 'GROCERY', deptKey: 'GROCERY', commodity: 'Powdered/crystal drink mix', brand: 'National', source: 'sku-fit-only',
+    elasticity: -14.472, rSquared: 0.316, pValue: 0.02, n: 44, currentPrice: 2.49 },
+
+  // ---- source: dept-fallback (real current price from TOP_RECS; elasticity
+  //      borrowed from the matching department in ELASTICITY_DEPT because no
+  //      per-SKU regression exists for these rows) ----
+  { id: 5000201, dept: 'DRUG GM', deptKey: 'DRUG GM', commodity: 'Home Furnishings', brand: 'National', source: 'dept-fallback',
+    elasticity: -0.43, rSquared: 0.30, pValue: 0.08, n: 30, currentPrice: 39.99, competitorPrice: 41.20, priceGapPct: -2.9, position: 'priced in line with market' },
+  { id: 5000202, dept: 'MEAT', deptKey: 'MEAT', commodity: 'Turkey', brand: 'National', source: 'dept-fallback',
+    elasticity: -0.49, rSquared: 0.30, pValue: 0.08, n: 30, currentPrice: 19.25, competitorPrice: 20.10, priceGapPct: -4.2, position: 'priced below market' },
+  { id: 5000203, dept: 'SEAFOOD', deptKey: 'OTHER', commodity: 'Seafood, frozen', brand: 'National', source: 'dept-fallback',
+    elasticity: -0.57, rSquared: 0.30, pValue: 0.08, n: 30, currentPrice: 69.90, competitorPrice: 71.35, priceGapPct: -2.0, position: 'priced in line with market' },
+  { id: 5000204, dept: 'DRUG GM', deptKey: 'DRUG GM', commodity: 'Candy, packaged', brand: 'National', source: 'dept-fallback',
+    elasticity: -0.43, rSquared: 0.30, pValue: 0.08, n: 30, currentPrice: 0.15, competitorPrice: 0.16, priceGapPct: -6.3, position: 'priced below market' },
+  { id: 5000205, dept: 'DRUG GM', deptKey: 'DRUG GM', commodity: 'Christmas seasonal', brand: 'National', source: 'dept-fallback',
+    elasticity: -0.43, rSquared: 0.30, pValue: 0.08, n: 30, currentPrice: 31.99, competitorPrice: 33.50, priceGapPct: -4.5, position: 'priced below market' },
+
+  // ---- source: illustrative (Kiosk & Gas has no per-SKU rows in the
+  //      processed data at all — see DEPARTMENTS['KIOSK-GAS'].note in
+  //      data.js; kept here only so the department isn't empty) ----
+  { id: 5000301, dept: 'KIOSK-GAS', deptKey: 'KIOSK-GAS', commodity: 'Fountain Drinks', brand: 'Private', source: 'illustrative',
+    elasticity: -8.0, rSquared: 0.15, pValue: 0.20, n: 12, currentPrice: 1.49, competitorPrice: 1.55, priceGapPct: -3.9, position: 'priced below market' },
+  { id: 5000302, dept: 'KIOSK-GAS', deptKey: 'KIOSK-GAS', commodity: 'Checkout Candy & Snacks', brand: 'National', source: 'illustrative',
+    elasticity: -8.0, rSquared: 0.15, pValue: 0.20, n: 12, currentPrice: 1.99, competitorPrice: 2.05, priceGapPct: -2.9, position: 'priced below market' },
+].map(p => {
+  const competitorPrice = p.competitorPrice ?? +(p.currentPrice * 1.005).toFixed(2);
+  const priceGapPct = p.priceGapPct ?? +(((p.currentPrice - competitorPrice) / competitorPrice) * 100).toFixed(2);
+  const position = p.position ?? (Math.abs(priceGapPct) < 2 ? 'priced in line with market' : priceGapPct > 0 ? 'priced above market' : 'priced below market');
+  return { ...p, competitorPrice, priceGapPct, position,
+    unitCost: +(p.currentPrice * (1 - DI_MARGIN_ASSUMPTION)).toFixed(4), marginAssumption: DI_MARGIN_ASSUMPTION };
+});
+const DI_PRODUCTS = DI_PRODUCTS_RAW;
+const diGetProduct = (id) => DI_PRODUCTS.find(p => p.id === Number(id));
+const DI_BASE_DEMAND = 1000; // arbitrary shared index — only relative movement matters
+// DI money values live on that ~1000-unit demand index, not the dashboard's
+// real aggregate revenue — the shared fmt() (which rounds to $K/$M) would
+// collapse them to $0K, so use a dedicated formatter that shows real dollars.
+const diFmt = (n)=> (n<0?'-':'') + '$' + Math.round(Math.abs(n)).toLocaleString();
+
+/* ---- optimization.js: pure price-response landscape + optimum ---- */
+const OptimizationEngine = {
+  optimizePrice({ currentPrice, elasticity, unitCost, baseDemand = 1000, minPriceMult = 0.85, maxPriceMult = 1.25, steps = 25 }) {
+    const e = Math.max(-8, Math.min(8, elasticity)); // cap pathological elasticities so the curve stays interpretable
+    const landscape = [];
+    for (let i = 0; i < steps; i++) {
+      const mult = minPriceMult + ((maxPriceMult - minPriceMult) * i) / (steps - 1);
+      const price = +(currentPrice * mult).toFixed(4);
+      const demand = baseDemand * Math.pow(price / currentPrice, e);
+      const revenue = price * demand;
+      const profit = (price - unitCost) * demand;
+      const marginPct = price > 0 ? ((price - unitCost) / price) * 100 : 0;
+      landscape.push({ priceMult: +mult.toFixed(3), price, demand: +demand.toFixed(2), revenue: +revenue.toFixed(2), profit: +profit.toFixed(2), marginPct: +marginPct.toFixed(2) });
+    }
+    const optimal = landscape.reduce((best, pt) => (pt.profit > best.profit ? pt : best), landscape[0]);
+    const current = landscape.reduce((closest, pt) => Math.abs(pt.priceMult - 1) < Math.abs(closest.priceMult - 1) ? pt : closest, landscape[0]);
+    return { landscape, optimal, current, elasticityUsed: e };
+  }
+};
+
+/* ---- whatIfSimulator.js: recalculates outcomes for live UI inputs ---- */
+const WhatIfSimulator = {
+  simulate({ basePrice, baseDemand, elasticity, unitCost, priceChangePct = 0, promoIntensity = 0, competitorPrice = null, inventoryAvailable = null, marketDemandIndex = 100 }) {
+    const e = Math.max(-8, Math.min(8, elasticity));
+    const newPrice = +(basePrice * (1 + priceChangePct / 100)).toFixed(4);
+    let demand = baseDemand * Math.pow(newPrice / basePrice, e); // own-price effect
+    demand *= 1 + (Math.log1p(promoIntensity / 10) * 0.04); // promo lift, diminishing returns
+    let competitorGapPct = null;
+    if (competitorPrice) {
+      competitorGapPct = +(((newPrice - competitorPrice) / competitorPrice) * 100).toFixed(2);
+      const baseGapPct = ((basePrice - competitorPrice) / competitorPrice) * 100;
+      const gapDelta = (competitorGapPct - baseGapPct) / 100;
+      demand *= 1 - gapDelta * 0.3; // assumed cross-elasticity vs. competitor
+    }
+    demand *= marketDemandIndex / 100;
+    let inventoryConstrained = false;
+    if (inventoryAvailable != null && demand > inventoryAvailable) { demand = inventoryAvailable; inventoryConstrained = true; }
+    demand = Math.max(0, demand);
+    const revenue = newPrice * demand;
+    const profit = (newPrice - unitCost) * demand;
+    const marginPct = newPrice > 0 ? ((newPrice - unitCost) / newPrice) * 100 : 0;
+    const demandChangePct = +(((demand - baseDemand) / baseDemand) * 100).toFixed(2);
+    const marginScore = Math.max(0, Math.min(100, marginPct * 2.2));
+    const demandScore = Math.max(0, 100 - Math.abs(demandChangePct) * 1.5);
+    const gapScore = competitorGapPct == null ? 80 : Math.max(0, 100 - Math.abs(competitorGapPct) * 3);
+    const pricingHealthScore = Math.round(marginScore * 0.4 + demandScore * 0.35 + gapScore * 0.25);
+    return { newPrice, projectedUnits: +demand.toFixed(2), projectedRevenue: +revenue.toFixed(2), projectedProfit: +profit.toFixed(2),
+      projectedMarginPct: +marginPct.toFixed(2), demandChangePct, competitorGapPct, inventoryConstrained, pricingHealthScore };
+  }
+};
+
+/* ---- businessRules.js: governance guardrails on a candidate price ---- */
+const BusinessRules = {
+  evaluateRules(candidate, constraints) {
+    const reasons = [], violations = [];
+    if (candidate.projectedMarginPct < constraints.minMarginPct) {
+      violations.push(`Margin ${candidate.projectedMarginPct.toFixed(1)}% falls below the ${constraints.minMarginPct}% policy floor.`);
+    } else {
+      reasons.push(`Margin of ${candidate.projectedMarginPct.toFixed(1)}% clears the ${constraints.minMarginPct}% policy floor.`);
+    }
+    if (Math.abs(candidate.demandChangePct) > constraints.maxDemandLossPct && candidate.demandChangePct < 0) {
+      violations.push(`Projected volume loss of ${Math.abs(candidate.demandChangePct).toFixed(1)}% exceeds the ${constraints.maxDemandLossPct}% tolerance.`);
+    } else {
+      reasons.push(`Projected demand change (${candidate.demandChangePct.toFixed(1)}%) is within tolerance.`);
+    }
+    if (candidate.competitorGapPct != null && candidate.competitorGapPct > constraints.maxCompetitorGapPct) {
+      violations.push(`Priced ${candidate.competitorGapPct.toFixed(1)}% above the competitor, past the ${constraints.maxCompetitorGapPct}% ceiling.`);
+    } else if (candidate.competitorGapPct != null) {
+      reasons.push(`Competitor price gap (${candidate.competitorGapPct.toFixed(1)}%) is within the allowed band.`);
+    }
+    if (candidate.inventoryConstrained) violations.push('Recommendation is currently capped by available inventory.');
+    let status = 'approved';
+    if (violations.length >= 2) status = 'rejected'; else if (violations.length === 1) status = 'conditionally_approved';
+    return { status, reasons, violations };
+  }
+};
+
+/* ---- uncertainty.js: turns model-fit stats into a confidence badge ---- */
+const UncertaintyEngine = {
+  estimateConfidence({ rSquared, pValue, n, pointEstimate }) {
+    const fitScore = Math.max(0, Math.min(1, rSquared)) * 55;
+    const sigScore = (pValue <= 0.05 ? 1 : Math.max(0, 1 - pValue)) * 25;
+    const sampleScore = Math.min(1, n / 50) * 20;
+    const confidenceScore = Math.round(fitScore + sigScore + sampleScore);
+    const badge = confidenceScore >= 75 ? 'High' : confidenceScore >= 50 ? 'Medium' : 'Low';
+    const uncertaintyFactor = (1 - Math.max(0, Math.min(1, rSquared))) * (1 / Math.sqrt(Math.max(1, n))) * 4;
+    const halfWidth = Math.abs(pointEstimate) * Math.max(0.03, Math.min(0.6, uncertaintyFactor));
+    return { confidenceScore, badge, interval: { low: +(pointEstimate - halfWidth).toFixed(2), high: +(pointEstimate + halfWidth).toFixed(2) } };
+  }
+};
+
+/* ---- scenarioEngine.js: hold / +5% / +10% / -5% / optimizer, side by side ---- */
+const ScenarioEngine = {
+  generateScenarios(product, baseDemand, optimizerResult) {
+    const shared = { basePrice: product.currentPrice, baseDemand, elasticity: product.elasticity, unitCost: product.unitCost, competitorPrice: product.competitorPrice };
+    const scenarios = [
+      { key: 'hold', label: 'Hold current price', priceChangePct: 0 },
+      { key: 'up5', label: '+5% price', priceChangePct: 5 },
+      { key: 'up10', label: '+10% price', priceChangePct: 10 },
+      { key: 'down5', label: '-5% price', priceChangePct: -5 },
+      { key: 'optimized', label: 'Optimizer recommendation', priceChangePct: +(((optimizerResult.optimal.price - product.currentPrice) / product.currentPrice) * 100).toFixed(2) },
+    ];
+    return scenarios.map(s => ({ ...s, result: WhatIfSimulator.simulate({ ...shared, priceChangePct: s.priceChangePct }) }));
+  }
+};
+
+/* ---- recommendationEngine.js: assembles the plain-language "why" ---- */
+const RecommendationEngine = {
+  explainRecommendation(product, scenario, ruleResult, confidenceResult) {
+    const r = scenario.result;
+    const direction = scenario.priceChangePct > 0 ? 'increase' : scenario.priceChangePct < 0 ? 'decrease' : 'hold';
+    const drivers = [
+      `Elasticity of ${product.elasticity.toFixed(2)} means a ${Math.abs(scenario.priceChangePct).toFixed(1)}% price ${direction} is expected to move volume by ${r.demandChangePct.toFixed(1)}%.`,
+      `Projected revenue: ${diFmt(r.projectedRevenue)}; projected margin: ${r.projectedMarginPct.toFixed(1)}%.`,
+      r.competitorGapPct != null ? `Resulting competitor price gap: ${r.competitorGapPct.toFixed(1)}% (${product.position}).` : `No competitor benchmark available for this SKU.`,
+      r.inventoryConstrained ? `Inventory is currently the binding constraint on volume.` : `Inventory is not a binding constraint at this volume.`,
+      `Unit cost is back-solved from a flat ${(product.marginAssumption * 100).toFixed(0)}% target margin (no direct cost feed in the source data).`,
+      `Elasticity fit quality (R² = ${product.rSquared.toFixed(2)}, n = ${product.n}) drives the confidence badge below.`,
+    ];
+    return {
+      productId: product.id,
+      summary: `${direction === 'hold' ? 'Hold' : direction === 'increase' ? 'Increase' : 'Decrease'} ${product.commodity} price by ${Math.abs(scenario.priceChangePct).toFixed(1)}% — expected profit ${r.projectedProfit >= 0 ? 'of' : 'change of'} ${diFmt(r.projectedProfit)}, confidence: <b>${confidenceResult.badge}</b> (${confidenceResult.confidenceScore}%).`,
+      drivers, ruleStatus: ruleResult.status, ruleReasons: ruleResult.reasons, ruleViolations: ruleResult.violations, confidence: confidenceResult,
+    };
+  }
+};
+
+/* ---- decisionEngine.js: the one function the UI is allowed to call ---- */
+const DecisionEngine = {
+  run(productId, whatIf = {}) {
+    const product = diGetProduct(productId);
+    if (!product) throw new Error(`Unknown product id: ${productId}`);
+    const optimizerResult = OptimizationEngine.optimizePrice({ currentPrice: product.currentPrice, elasticity: product.elasticity, unitCost: product.unitCost, baseDemand: DI_BASE_DEMAND });
+    const scenarios = ScenarioEngine.generateScenarios(product, DI_BASE_DEMAND, optimizerResult);
+    const primaryScenario = scenarios.find(s => s.key === 'optimized');
+    const ruleResult = BusinessRules.evaluateRules(primaryScenario.result, DI_RULE_CONSTRAINTS);
+    const confidenceResult = UncertaintyEngine.estimateConfidence({ rSquared: product.rSquared, pValue: product.pValue, n: product.n, pointEstimate: primaryScenario.result.projectedProfit });
+    const explanation = RecommendationEngine.explainRecommendation(product, primaryScenario, ruleResult, confidenceResult);
+    let liveResult = null;
+    if (Object.keys(whatIf).length) {
+      liveResult = WhatIfSimulator.simulate({ basePrice: product.currentPrice, baseDemand: DI_BASE_DEMAND, elasticity: product.elasticity, unitCost: product.unitCost, competitorPrice: product.competitorPrice, ...whatIf });
+    }
+    return { product, optimizerResult, scenarios, primaryScenario, ruleResult, confidenceResult, explanation, liveResult };
+  }
+};
+
+/* ===================== state ===================== */
+let state = { dept:'ALL', weeks:12 };
+
+function weeksInRange(n){ return WEEK_ORDER.slice(WEEK_ORDER.length-n); }
+function deptTotalsForWeeks(weeksArr){
+  const totals = {}; DKEYS.forEach(k=>totals[k]=0);
+  weeksArr.forEach(w=> DKEYS.forEach(k=> totals[k]+= WEEKLY[w][k]||0));
+  return totals;
+}
+function seriesForDept(dept, weeksArr){
+  return weeksArr.map(w=>{
+    if(dept==='ALL') return DKEYS.reduce((s,k)=> s+(WEEKLY[w][k]||0),0);
+    return WEEKLY[w][dept]||0;
+  });
+}
+
+/* ===================== filters ===================== */
+function buildChips(){
+  const dp = document.getElementById('deptChips');
+  DEPTS.forEach(d=>{
+    const el = document.createElement('span');
+    el.className = 'chip'+(state.dept===d.key?' active':'');
+    el.textContent = d.label;
+    el.onclick = ()=>{ state.dept = d.key; render(); };
+    el.dataset.key = d.key;
+    dp.appendChild(el);
+  });
+  const wp = document.getElementById('weekChips');
+  [4,8,12].forEach(n=>{
+    const el = document.createElement('span');
+    el.className = 'chip'+(state.weeks===n?' active':'');
+    el.textContent = n+'w';
+    el.onclick = ()=>{ state.weeks = n; render(); };
+    el.dataset.n = n;
+    wp.appendChild(el);
+  });
+}
+function syncChips(){
+  document.querySelectorAll('#deptChips .chip').forEach(p=> p.classList.toggle('active', p.dataset.key===state.dept));
+  document.querySelectorAll('#weekChips .chip').forEach(p=> p.classList.toggle('active', Number(p.dataset.n)===state.weeks));
+}
+
+/* ===================== overview ===================== */
+function renderTicker(weeksArr){
+  const series = seriesForDept(state.dept, weeksArr);
+  const revenue = series.reduce((a,b)=>a+b,0);
+  const prevWeeks = WEEK_ORDER.slice(Math.max(0, WEEK_ORDER.indexOf(weeksArr[0])-weeksArr.length), WEEK_ORDER.indexOf(weeksArr[0]));
+  const prevSeries = prevWeeks.length ? seriesForDept(state.dept, prevWeeks) : null;
+  const prevRevenue = prevSeries ? prevSeries.reduce((a,b)=>a+b,0) : null;
+  const growth = prevRevenue ? ((revenue-prevRevenue)/prevRevenue*100) : null;
+
+  document.getElementById('tkRev').innerHTML = fmt(revenue) + (growth!=null ? ` <span class="delta ${growth>=0?'up':'down'}" style="font-size:11px;">${growth>=0?'↑':'↓'}${Math.abs(growth).toFixed(1)}%</span>` : '');
+  document.getElementById('tkRevCap').textContent = `${label(state.dept)} · last ${weeksArr.length} weeks`;
+
+  const promo = state.dept==='ALL' ? 51.0 : DEPTSTATS[state.dept].promo;
+  document.getElementById('tkPromo').textContent = promo.toFixed(0)+'%';
+  document.getElementById('tkPromoCap').textContent = `${label(state.dept)} sales at a discount`;
+
+  const momentum = growth==null ? 50 : Math.max(0, Math.min(100, 50 + growth*4));
+  const promoScore = Math.max(0, Math.min(100, 100 - promo));
+  const marginScore = 60;
+  const health = Math.round(momentum*0.4 + promoScore*0.3 + marginScore*0.3);
+  document.getElementById('tkHealth').innerHTML = health + '<span style="font-size:11px;color:var(--ink-faint);">/100</span>';
+
+  const basket = state.dept==='ALL' ? 29.21 : DEPTSTATS[state.dept].basket;
+  document.getElementById('tkBasket').textContent = '$'+basket.toFixed(2);
+}
+
+function renderTrend(weeksArr){
+  const series = seriesForDept(state.dept, weeksArr);
+  const max = Math.max(...series), min = Math.min(...series);
+  const w=680,h=160,padX=8,padY=14,plotW=(w-2*padX)*0.78,plotH=h-padY-22;
+  const pts = series.map((v,i)=>{
+    const x = padX + (i/(series.length-1))*plotW;
+    const y = padY + (max===min?plotH/2:(1-(v-min)/(max-min))*plotH);
+    return [x,y];
+  });
+  document.getElementById('trendLine').setAttribute('points', pts.map(p=>p.join(',')).join(' '));
+
+  /* gridlines with value labels, so a reader can read an approximate figure without hovering */
+  const gridGroup = document.getElementById('gridGroup');
+  gridGroup.innerHTML = '';
+  const steps = 4;
+  for(let i=0;i<=steps;i++){
+    const y = padY + (i/steps)*plotH;
+    const val = max - (i/steps)*(max-min);
+    const gLine = document.createElementNS('http://www.w3.org/2000/svg','line');
+    gLine.setAttribute('x1', padX); gLine.setAttribute('x2', w-padX);
+    gLine.setAttribute('y1', y); gLine.setAttribute('y2', y);
+    gLine.setAttribute('stroke', '#E3E5EA'); gLine.setAttribute('stroke-width', '1');
+    gridGroup.appendChild(gLine);
+    const gText = document.createElementNS('http://www.w3.org/2000/svg','text');
+    gText.setAttribute('x', w-padX+4); gText.setAttribute('y', y+3);
+    gText.setAttribute('font-size', '9'); gText.setAttribute('fill', '#9AA0AC');
+    gText.textContent = fmt(val);
+    gridGroup.appendChild(gText);
+  }
+
+  /* stash geometry so the hover handler can find the nearest point */
+  window._trend = { pts, series, weeksArr, padY, plotH, min, max };
+  const last = pts[pts.length-1];
+  document.getElementById('trendDot').setAttribute('cx', last[0]);
+  document.getElementById('trendDot').setAttribute('cy', last[1]);
+
+  const tail = series.slice(-Math.max(3, Math.floor(series.length/3)));
+  const n = tail.length;
+  const xs = tail.map((_,i)=>i), ys = tail;
+  const xbar = xs.reduce((a,b)=>a+b,0)/n, ybar = ys.reduce((a,b)=>a+b,0)/n;
+  let num=0, den=0;
+  for(let i=0;i<n;i++){ num += (xs[i]-xbar)*(ys[i]-ybar); den += (xs[i]-xbar)**2; }
+  const slope = den===0?0:num/den;
+  const fcstPts = [last];
+  for(let i=1;i<=4;i++){
+    const val = series[series.length-1] + slope*i;
+    const x = last[0] + i*(plotW*0.055);
+    const y = padY + (max===min?plotH/2:(1-(val-min)/(max-min))*plotH);
+    fcstPts.push([x, Math.max(padY, Math.min(padY+plotH, y))]);
+  }
+  document.getElementById('fcstLine').setAttribute('points', fcstPts.map(p=>p.join(',')).join(' '));
+
+  const wow = series.length>1 ? ((series[series.length-1]-series[series.length-2])/series[series.length-2]*100) : 0;
+  const deltaEl = document.getElementById('trendDelta');
+  deltaEl.textContent = (wow>=0?'↑ ':'↓ ')+Math.abs(wow).toFixed(1)+'% last week';
+  deltaEl.style.color = wow>=0 ? 'var(--good)' : 'var(--risk)';
+  document.getElementById('trendTitle').textContent = `Weekly sales — ${label(state.dept)}`;
+
+  const axis = document.getElementById('trendAxis');
+  axis.innerHTML = '';
+  [0, Math.floor(weeksArr.length/2), weeksArr.length-1].forEach(i=>{
+    const s = document.createElement('span'); s.textContent = 'Wk '+weeksArr[i]; axis.appendChild(s);
+  });
+  const fl = document.createElement('span'); fl.style.color='var(--warn)'; fl.textContent = '+4wk proj.';
+  axis.appendChild(fl);
+}
+
+function renderMix(weeksArr){
+  const totals = deptTotalsForWeeks(weeksArr);
+  const grand = DKEYS.reduce((s,k)=> s+totals[k],0);
+  const el = document.getElementById('mixBars');
+  el.innerHTML = '';
+  DKEYS.forEach(k=>{
+    const pct = totals[k]/grand*100;
+    const row = document.createElement('div');
+    row.className = 'barrow' + (state.dept!=='ALL' && state.dept!==k ? ' dim' : '');
+    row.innerHTML = `<span class="lbl">${label(k)}</span><div class="track"><div class="fill" style="width:${pct.toFixed(1)}%;${state.dept===k?('background:'+DCOLOR[k]):''}"></div></div><span class="val mono">${pct.toFixed(1)}%</span>`;
+    row.onclick = ()=>{ state.dept = (state.dept===k?'ALL':k); render(); };
+    el.appendChild(row);
+  });
+}
+
+function renderMovers(){
+  const list = state.dept==='ALL' ? MOVERS : MOVERS.filter(m=>m.dept===state.dept);
+  document.getElementById('moversScope').textContent = state.dept==='ALL' ? 'all departments' : label(state.dept);
+  const tb = document.querySelector('#moversTable tbody');
+  tb.innerHTML = '';
+  if(list.length===0){ tb.innerHTML = '<tr><td colspan="4" style="color:var(--ink-faint);">No tracked price movers in this department.</td></tr>'; return; }
+  list.forEach(m=>{
+    const tr = document.createElement('tr');
+    const cls = m.chg>=0 ? 'up' : 'down';
+    tr.innerHTML = `<td><b>${m.name}</b></td><td>${label(m.dept)}</td><td class="num mono ${cls}">${m.chg>=0?'↑':'↓'} ${Math.abs(m.chg).toFixed(1)}%</td><td style="color:var(--ink-soft);">${m.txt}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function renderActions(){
+  const el = document.getElementById('actionsList');
+  el.innerHTML = '';
+  ACTIONS_ALL.forEach((a,i)=>{
+    const li = document.createElement('li'); if(a.watch) li.className='watch';
+    li.innerHTML = `<span class="sq">${i+1}</span><span><b>${a.b}</b>${a.t}</span>`;
+    el.appendChild(li);
+  });
+}
+
+/* ===================== drivers & elasticity ===================== */
+function renderElasticityBars(){
+  const el = document.getElementById('elasticityBars');
+  el.innerHTML = '';
+  const maxAbs = Math.max(...ELASTICITY_DEPT.map(d=>Math.abs(d.e)));
+  [...ELASTICITY_DEPT].sort((a,b)=>a.e-b.e).forEach(d=>{
+    const row = document.createElement('div'); row.className='barrow wide';
+    const pct = (Math.abs(d.e)/maxAbs*50).toFixed(1);
+    const isNeg = d.e < 0;
+    const fillStyle = isNeg ? `right:50%;width:${pct}%;background:var(--brand);` : `left:50%;width:${pct}%;background:var(--risk);`;
+    row.innerHTML = `<span class="lbl">${d.dept}</span>
+      <div class="track zero"><div class="mid"></div><div class="zfill" style="${fillStyle}"></div></div>
+      <span class="val mono">${d.e>0?'+':''}${d.e.toFixed(2)}</span>`;
+    el.appendChild(row);
+  });
+}
+
+function renderTopElastic(){
+  const tb = document.getElementById('topElasticBody');
+  tb.innerHTML = '';
+  TOP_ELASTIC_PRODUCTS.forEach(p=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><b>${p.name}</b><div style="font-size:10px;color:var(--ink-faint);">${p.sub}</div></td>
+      <td class="num mono" style="color:var(--brand);font-weight:700;">${p.e.toFixed(1)}</td>
+      <td class="num mono"><span class="fit-dot ${fitClass(p.r2)}"></span>${p.r2.toFixed(2)}</td>
+      <td class="num mono">${p.n}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+function renderCompetitorBars(){
+  const el = document.getElementById('competitorBars');
+  el.innerHTML = '';
+  const maxGap = Math.max(...COMPETITOR_GAP.map(d=>d.gap));
+  COMPETITOR_GAP.forEach(d=>{
+    const row = document.createElement('div'); row.className='barrow wide';
+    const pct = (d.gap/maxGap*100).toFixed(1);
+    row.innerHTML = `<span class="lbl">${d.dept}</span><div class="track"><div class="fill" style="width:${pct}%;background:var(--sim);"></div></div><span class="val mono">+${d.gap.toFixed(2)}%</span>`;
+    row.title = `n=${d.n.toLocaleString()} comparisons`;
+    el.appendChild(row);
+  });
+}
+
+/* ===================== recommendations ===================== */
+function renderRecs(){
+  const tb = document.getElementById('recBody');
+  tb.innerHTML = '';
+  TOP_RECS.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><b>${r.name}</b></td><td>${r.dept}</td>
+      <td class="num mono"><span class="strike">$${r.from.toFixed(2)}</span><span class="toprice">$${r.to.toFixed(2)}</span></td>
+      <td class="num mono">+${r.pct.toFixed(1)}%</td>
+      <td class="num mono">${r.units.toLocaleString()}</td>
+      <td class="num mono" style="font-weight:700;">$${r.profit.toLocaleString()}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+/* ===================== customers ===================== */
+function renderSegments(){
+  const el = document.getElementById('segGrid');
+  el.innerHTML = '';
+  SEGMENTS.forEach(s=>{
+    const card = document.createElement('div'); card.className='segcard';
+    card.innerHTML = `
+      <div class="name">${s.label}</div>
+      <div class="statgrid">
+        <div class="s"><span class="l">Avg. spend</span><span class="v mono">$${s.spend.toLocaleString()}</span></div>
+        <div class="s"><span class="l">Avg. basket</span><span class="v mono">$${s.basket.toFixed(2)}</span></div>
+        <div class="s"><span class="l">Avg. trips</span><span class="v mono">${s.freq}</span></div>
+        <div class="s"><span class="l">Promo share</span><span class="v mono">${s.promo.toFixed(1)}%</span></div>
+      </div>
+      <div class="segn">${s.n.toLocaleString()} households (${(s.n/2500*100).toFixed(0)}%)</div>
+    `;
+    el.appendChild(card);
+  });
+}
+
+function renderIncome(){
+  const dept = state.dept;
+  const rows = Object.entries(INCOME).map(([name, byDept])=>{
+    const val = dept==='ALL' ? DKEYS.reduce((s,k)=>s+byDept[k],0) : byDept[dept];
+    return {name, val};
+  });
+  const max = Math.max(...rows.map(r=>r.val));
+  const el = document.getElementById('incomeBars');
+  el.innerHTML = '';
+  rows.sort((a,b)=>b.val-a.val).forEach(r=>{
+    const row = document.createElement('div'); row.className='barrow';
+    row.innerHTML = `<span class="lbl">${r.name}</span><div class="track"><div class="fill" style="width:${(r.val/max*100).toFixed(1)}%"></div></div><span class="val mono">${fmt(r.val)}</span>`;
+    el.appendChild(row);
+  });
+  document.getElementById('custScope').textContent = state.dept==='ALL' ? 'all departments' : label(state.dept);
+  const top = rows.sort((a,b)=>b.val-a.val)[0];
+  document.getElementById('custBottom').innerHTML = `<b>${top.name}</b> households spend the most${state.dept!=='ALL'?' on '+label(state.dept).toLowerCase():''} — build offers around this group.`;
+}
+
+/* ===================== Decision Intelligence: app layer =====================
+   This is the ONLY block allowed to touch the DOM for the Decision
+   Intelligence view. It collects UI input, calls DecisionEngine.run() /
+   WhatIfSimulator.simulate(), and renders whatever comes back — no pricing
+   math lives down here. */
+let diProductId = null;
+let diView = null;
+let diDept = 'ALL';
+
+const DI_SOURCE_LABEL = {
+  'sku-regression': 'Per-SKU regression — price & elasticity both from the source data',
+  'sku-fit-only': 'Per-SKU elasticity fit; price is a representative shelf price',
+  'dept-fallback': 'Real recommendation price; elasticity borrowed from the department average (no per-SKU fit available)',
+  'illustrative': 'Illustrative only — Kiosk & Gas has no per-SKU rows in the processed data',
+};
+const DI_SOURCE_BADGE_CLASS = {
+  'sku-regression': 'badge-good', 'sku-fit-only': 'badge-model', 'dept-fallback': 'badge-warn', 'illustrative': 'badge-bad',
+};
+
+function diProductsForDept(deptKey){
+  return deptKey==='ALL' ? DI_PRODUCTS : DI_PRODUCTS.filter(p=>p.deptKey===deptKey);
+}
+
+function diInit(){
+  const deptSel = document.getElementById('diDeptSelect');
+  deptSel.innerHTML = `<option value="ALL">All departments</option>` +
+    DEPTS.filter(d=>d.key!=='ALL').map(d=>{
+      const count = DI_PRODUCTS.filter(p=>p.deptKey===d.key).length;
+      return `<option value="${d.key}">${d.label} (${count})</option>`;
+    }).join('');
+  deptSel.addEventListener('change', e=> diFilterByDept(e.target.value));
+
+  // Default to the first real department (rather than "All") so picking a
+  // department immediately scopes the product list, per the requirement.
+  diDept = DEPTS.filter(d=>d.key!=='ALL')[0].key;
+  deptSel.value = diDept;
+  diPopulateProductSelect(diDept);
+
+  document.getElementById('diProductSelect').addEventListener('change', e=> diSelectProduct(Number(e.target.value)));
+  ['diPriceSlider','diPromoSlider','diCompSlider','diInvSlider'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', diRunWhatIf);
+  });
+}
+
+function diPopulateProductSelect(deptKey){
+  const sel = document.getElementById('diProductSelect');
+  sel.innerHTML = '';
+  const products = diProductsForDept(deptKey);
+  products.forEach(p=>{
+    const opt = document.createElement('option');
+    opt.value = p.id;
+    opt.textContent = `${p.commodity} (${p.brand})`;
+    sel.appendChild(opt);
+  });
+  const firstId = products[0].id;
+  sel.value = firstId;
+  diSelectProduct(firstId);
+}
+
+function diFilterByDept(deptKey){
+  diDept = deptKey;
+  diPopulateProductSelect(deptKey);
+}
+
+function diSelectProduct(id){
+  diProductId = id;
+  diView = DecisionEngine.run(id);
+  diRenderAll(diView);
+  diResetWhatIf(diView.product);
+}
+
+function diRenderAll(view){
+  const { product, primaryScenario, ruleResult, explanation, scenarios } = view;
+  const r = primaryScenario.result;
+
+  /* source transparency badge */
+  document.getElementById('diSourceBadge').className = `badge ${DI_SOURCE_BADGE_CLASS[product.source] || 'badge-model'}`;
+  document.getElementById('diSourceBadge').textContent = product.source.replace('-', ' ');
+  document.getElementById('diSourceBadge').title = DI_SOURCE_LABEL[product.source] || '';
+
+  /* ticker */
+  document.getElementById('diTicker').innerHTML = `
+    <div class="tcell"><div class="lbl">Current price</div><div class="figure mono">$${product.currentPrice.toFixed(2)}</div><div class="cap">${label(product.deptKey)} · ${product.brand}</div></div>
+    <div class="tcell"><div class="lbl">Optimizer price</div><div class="figure mono">$${r.newPrice.toFixed(2)}</div><div class="cap">${r.newPrice>product.currentPrice?'▲':r.newPrice<product.currentPrice?'▼':'—'} ${Math.abs(primaryScenario.priceChangePct).toFixed(1)}% vs. current</div></div>
+    <div class="tcell"><div class="lbl">Expected profit</div><div class="figure mono">${diFmt(r.projectedProfit)}</div><div class="cap">on a ${DI_BASE_DEMAND}-unit demand index</div></div>
+    <div class="tcell"><div class="lbl">Pricing health</div><div class="figure mono">${r.pricingHealthScore}<span style="font-size:11px;color:var(--ink-faint);">/100</span></div><div class="cap">margin · demand · competitor gap</div></div>
+    <div class="tcell"><div class="lbl">Rule status</div><div class="figure mono" style="text-transform:capitalize;">${ruleResult.status.replace('_',' ')}</div><div class="cap">${ruleResult.violations.length} violation${ruleResult.violations.length===1?'':'s'} flagged</div></div>
+  `;
+
+  /* recommendation */
+  document.getElementById('diRecHint').textContent = `confidence: ${explanation.confidence.badge} (${explanation.confidence.confidenceScore}%)`;
+  document.getElementById('diSummary').innerHTML = explanation.summary;
+  document.getElementById('diDrivers').innerHTML = explanation.drivers.map(d=>`<div class="d">${d}</div>`).join('');
+  const statusBadgeClass = explanation.ruleStatus==='approved' ? 'badge-good' : explanation.ruleStatus==='rejected' ? 'badge-bad' : 'badge-warn';
+  document.getElementById('diBadges').innerHTML = `
+    <span class="badge ${statusBadgeClass}">Rules: ${explanation.ruleStatus.replace('_',' ')}</span>
+    <span class="badge badge-model">95% band: ${diFmt(explanation.confidence.interval.low)} – ${diFmt(explanation.confidence.interval.high)}</span>
+    <span class="badge badge-sim">Elasticity capped at ±8 for optimization</span>
+  `;
+
+  /* business rules */
+  const ruleRows = [
+    ...ruleResult.reasons.map(t=>({ok:true,t})),
+    ...ruleResult.violations.map(t=>({ok:false,t})),
+  ];
+  document.getElementById('diRules').innerHTML = ruleRows.map(x=>`
+    <div class="rule-item ${x.ok?'ok':'bad'}"><span class="rd"></span><span>${x.t}</span></div>
+  `).join('');
+
+  /* scenarios */
+  document.getElementById('diScenarioBody').innerHTML = scenarios.map(s=>`
+    <tr class="${s.key===primaryScenario.key?'best':''}">
+      <td>${s.label}</td>
+      <td class="num">$${s.result.newPrice.toFixed(2)}</td>
+      <td class="num">${s.result.demandChangePct>=0?'+':''}${s.result.demandChangePct.toFixed(1)}%</td>
+      <td class="num">${diFmt(s.result.projectedRevenue)}</td>
+      <td class="num">${diFmt(s.result.projectedProfit)}</td>
+      <td class="num">${s.result.projectedMarginPct.toFixed(1)}%</td>
+    </tr>
+  `).join('');
+}
+
+function diResetWhatIf(product){
+  document.getElementById('diPriceSlider').value = 0;
+  document.getElementById('diPriceReadout').textContent = '0%';
+  document.getElementById('diPromoSlider').value = 0;
+  document.getElementById('diPromoReadout').textContent = '0';
+  const compSlider = document.getElementById('diCompSlider');
+  compSlider.min = 0; compSlider.max = (product.competitorPrice*3).toFixed(2); compSlider.step = 0.05;
+  compSlider.value = product.competitorPrice;
+  document.getElementById('diCompReadout').textContent = `$${product.competitorPrice.toFixed(2)}`;
+  document.getElementById('diInvSlider').value = 2000;
+  document.getElementById('diInvReadout').textContent = 'Unlimited';
+  diRunWhatIf();
+}
+
+function diRunWhatIf(){
+  const product = diGetProduct(diProductId);
+  const priceChangePct = Number(document.getElementById('diPriceSlider').value);
+  const promoIntensity = Number(document.getElementById('diPromoSlider').value);
+  const competitorPrice = Number(document.getElementById('diCompSlider').value);
+  const invRaw = Number(document.getElementById('diInvSlider').value);
+  const inventoryAvailable = invRaw>=2000 ? null : invRaw;
+
+  document.getElementById('diPriceReadout').textContent = `${priceChangePct>=0?'+':''}${priceChangePct}%`;
+  document.getElementById('diPromoReadout').textContent = promoIntensity;
+  document.getElementById('diCompReadout').textContent = `$${competitorPrice.toFixed(2)}`;
+  document.getElementById('diInvReadout').textContent = inventoryAvailable==null ? 'Unlimited' : inventoryAvailable;
+
+  const result = WhatIfSimulator.simulate({
+    basePrice: product.currentPrice, baseDemand: DI_BASE_DEMAND, elasticity: product.elasticity, unitCost: product.unitCost,
+    priceChangePct, promoIntensity, competitorPrice, inventoryAvailable,
+  });
+
+  document.getElementById('diWhatIfStats').innerHTML = `
+    <div class="di-stat"><div class="n mono">$${result.newPrice.toFixed(2)}</div><div class="l">New price</div></div>
+    <div class="di-stat"><div class="n mono">${result.projectedUnits.toFixed(0)}</div><div class="l">Projected units</div></div>
+    <div class="di-stat"><div class="n mono">${diFmt(result.projectedRevenue)}</div><div class="l">Revenue</div></div>
+    <div class="di-stat"><div class="n mono">${diFmt(result.projectedProfit)}</div><div class="l">Profit</div></div>
+    <div class="di-stat"><div class="n mono">${result.pricingHealthScore}/100</div><div class="l">Pricing health</div></div>
+  `;
+}
+
+/* ===================== master render ===================== */
+function render(){
+  syncChips();
+  const weeksArr = weeksInRange(state.weeks);
+  renderTicker(weeksArr);
+  renderTrend(weeksArr);
+  renderMix(weeksArr);
+  renderMovers();
+  renderActions();
+  renderElasticityBars();
+  renderTopElastic();
+  renderCompetitorBars();
+  renderRecs();
+  renderSegments();
+  renderIncome();
+}
+
+/* ===================== nav ===================== */
+document.querySelectorAll('.navitem').forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll('.navitem').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('view-'+t.dataset.view).classList.add('active');
+  };
+});
+
+/* ===================== chart hover: exact value at any point ===================== */
+function setupTrendHover(){
+  const svg = document.getElementById('trendSvg');
+  const catcher = document.getElementById('hoverCatcher');
+  const crosshair = document.getElementById('crosshair');
+  const hoverDot = document.getElementById('hoverDot');
+  const tooltip = document.getElementById('chartTooltip');
+  const wrap = document.querySelector('.chart-wrap');
+
+  function onMove(e){
+    const t = window._trend; if(!t) return;
+    const svgRect = svg.getBoundingClientRect();
+    const scaleX = 680/svgRect.width;
+    const localX = (e.clientX - svgRect.left) * scaleX;
+    let nearest = 0, best = Infinity;
+    t.pts.forEach((p,i)=>{ const d = Math.abs(p[0]-localX); if(d<best){best=d; nearest=i;} });
+    const [px,py] = t.pts[nearest];
+
+    crosshair.setAttribute('x1', px); crosshair.setAttribute('x2', px);
+    crosshair.setAttribute('y1', t.padY); crosshair.setAttribute('y2', t.padY + t.plotH);
+    crosshair.style.display = 'block';
+    hoverDot.setAttribute('cx', px); hoverDot.setAttribute('cy', py);
+    hoverDot.style.display = 'block';
+
+    const wrapRect = wrap.getBoundingClientRect();
+    tooltip.textContent = `Week ${t.weeksArr[nearest]} — ${fmt(t.series[nearest])}`;
+    tooltip.style.display = 'block';
+    let left = e.clientX - wrapRect.left + 14;
+    if(left > wrapRect.width - 110) left = e.clientX - wrapRect.left - 120;
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = Math.max(0, e.clientY - wrapRect.top - 34) + 'px';
+  }
+  function onLeave(){
+    crosshair.style.display = 'none';
+    hoverDot.style.display = 'none';
+    tooltip.style.display = 'none';
+  }
+  catcher.addEventListener('mousemove', onMove);
+  catcher.addEventListener('mouseleave', onLeave);
+}
+
+buildChips();
+render();
+setupTrendHover();
+diInit();
+</script>
+</body>
+</html>

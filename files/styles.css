@@ -1,0 +1,117 @@
+:root{
+  --paper:#F6F7F9; --card:#FFFFFF; --ink:#1A2233; --ink-soft:#5B6472;
+  --blue:#1E3A8A; --blue-light:#E8EEFB; --line:#E3E6EC;
+  --green:#0F5132; --green-light:#E4EEE6;
+  --amber:#B45309; --amber-light:#FBEEDF;
+  --red:#9A2A2A; --red-light:#FBE6E6;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;}
+.board{max-width:1320px;margin:0 auto;padding:22px 26px 40px;}
+
+/* header */
+header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap;gap:12px;}
+.eyebrow{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--blue);font-weight:700;margin-bottom:4px;}
+h1{font-size:22px;margin:0;font-weight:700;}
+.subnote{font-size:12px;color:var(--ink-soft);margin-top:4px;max-width:560px;line-height:1.4;}
+
+/* controls */
+.controls{background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:12px 18px;margin-bottom:18px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;}
+.control-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.control-label{font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em;}
+select{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12.5px;font-weight:600;color:var(--ink);background:#FBFBFD;}
+
+/* section labels for the 3-level narrative */
+.section-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--blue);
+  margin:26px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--line);}
+.section-label:first-of-type{margin-top:0;}
+
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:14px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;}
+.card h3{font-size:12.5px;margin:0 0 12px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.card h3 small{font-size:10.5px;color:var(--ink-soft);font-weight:600;}
+.tag{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;}
+.tag-good{background:var(--green-light);color:var(--green);}
+.tag-watch{background:var(--amber-light);color:var(--amber);}
+.tag-bad{background:var(--red-light);color:var(--red);}
+
+/* KPI row */
+.kpi{grid-column:span 3;}
+.kpi .val{font-size:22px;font-weight:700;line-height:1;margin-bottom:4px;}
+.kpi .target{font-size:11px;color:var(--ink-soft);}
+.kpi .trend{font-size:11px;font-weight:700;margin-top:6px;}
+
+/* executive summary */
+.exec-summary{grid-column:span 12;background:var(--blue-light);border:1px solid #CBD8F5;}
+.exec-summary ul{margin:0;padding-left:18px;font-size:12.5px;line-height:1.6;}
+.exec-summary li{margin-bottom:4px;}
+
+/* driver tree */
+.driver-tree{grid-column:span 6;}
+.dt-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12.5px;}
+.dt-row .arrow{color:var(--ink-soft);}
+.dt-node{background:#FBFBFD;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-weight:600;flex:1;}
+.dt-node .sub{font-size:10.5px;color:var(--ink-soft);font-weight:500;}
+
+/* elasticity */
+.elasticity{grid-column:span 6;}
+.bar-row{display:grid;grid-template-columns:120px 1fr 60px;align-items:center;gap:8px;margin-bottom:8px;}
+.bar-row .lbl{font-size:12px;font-weight:600;}
+.bar-track{background:#EEF0F4;border-radius:6px;height:12px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:6px;background:var(--blue);}
+.bar-val{font-size:11.5px;color:var(--ink-soft);text-align:right;font-weight:600;}
+
+/* competitive */
+.competitive{grid-column:span 4;}
+.comp-stat{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px dashed var(--line);}
+.comp-stat:last-child{border-bottom:none;}
+.comp-stat b{font-weight:700;}
+
+/* forecast */
+.forecast{grid-column:span 8;}
+.forecast svg{overflow:visible;}
+
+/* recommendation card */
+.recommendation{grid-column:span 12;background:#0F2557;color:#fff;border:none;}
+.recommendation h3{color:#cfe0ff;}
+.recommendation .summary{font-size:14.5px;font-weight:600;line-height:1.5;margin-bottom:10px;}
+.recommendation .drivers{font-size:12px;color:#cfe0ff;line-height:1.6;}
+.recommendation .badges{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.badge{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.15);}
+
+/* scenario table */
+.scenarios{grid-column:span 7;}
+table.scenario-table{width:100%;border-collapse:collapse;font-size:12px;}
+table.scenario-table th{text-align:left;font-size:10.5px;text-transform:uppercase;color:var(--ink-soft);padding:6px 4px;border-bottom:1px solid var(--line);}
+table.scenario-table td{padding:7px 4px;border-bottom:1px solid var(--line);}
+table.scenario-table tr.best td{background:var(--green-light);font-weight:700;}
+
+/* risk & opportunity */
+.risks{grid-column:span 5;}
+.risk-row{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:12px;}
+.risk-row:last-child{border-bottom:none;}
+.risk-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.risk-dot.high{background:var(--red);} .risk-dot.med{background:var(--amber);} .risk-dot.low{background:var(--green);}
+
+/* what-if */
+.whatif{grid-column:span 12;}
+.whatif-controls{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:14px;}
+.whatif-controls label{font-size:11px;font-weight:700;color:var(--ink-soft);display:block;margin-bottom:4px;}
+.whatif-controls input[type=range]{width:100%;}
+.whatif-controls .readout{font-size:12px;font-weight:700;color:var(--ink);}
+.whatif-results{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
+.whatif-results .stat{background:#FBFBFD;border:1px solid var(--line);border-radius:8px;padding:10px 12px;}
+.whatif-results .stat .n{font-size:16px;font-weight:700;}
+.whatif-results .stat .l{font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
+
+/* footer / governance */
+footer{margin-top:20px;font-size:11px;color:var(--ink-soft);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  border-top:1px solid var(--line);padding-top:12px;}
+
+@media(max-width:1000px){
+  .kpi{grid-column:span 6;}
+  .driver-tree,.elasticity,.competitive,.forecast,.scenarios,.risks{grid-column:span 12;}
+  .whatif-controls,.whatif-results{grid-template-columns:repeat(2,1fr);}
+}
