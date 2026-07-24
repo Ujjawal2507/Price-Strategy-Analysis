@@ -14,7 +14,7 @@ rules, and how confident you should be in any of it.
 
 ## Dashboard preview
 
-**Live file:** [Dashboard]([dashboard/index.html](https://price-strategy-analysis.onrender.com))
+**Live Dashboard:** [price-strategy-analysis.onrender.com]
 
 ## Why this exists
 
