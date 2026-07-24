@@ -16,21 +16,6 @@ rules, and how confident you should be in any of it.
 
 **Live file:** [dashboard/index.html](dashboard/index.html)
 
-**Overview**
-![Overview](docs/01_overview.png)
-
-**Drivers & Elasticity**
-![Drivers & Elasticity](docs/02_drivers_elasticity.png)
-
-**Recommendations**
-![Recommendations](docs/03_recommendations.png)
-
-**Customers**
-![Customers](docs/04_customers.png)
-
-**Decision Intelligence**
-![Decision Intelligence](docs/05_decision_intelligence.png)
-
 ## Why this exists
 
 A grocery chain sits on years of receipt-level data and usually still
