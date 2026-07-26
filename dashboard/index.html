@@ -62,6 +62,7 @@
   .filterbar{background:var(--panel);border:1px solid var(--line);border-radius:8px;
     padding:10px 14px;margin-bottom:16px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;}
   .fgroup{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  #deptChips,#weekChips{display:flex;gap:7px;flex-wrap:wrap;}
   .flabel{font-size:11px;font-weight:700;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;margin-right:2px;}
   .chip{border:1px solid var(--line);background:var(--bg);color:var(--ink-soft);font-size:12.5px;font-weight:600;
     padding:5px 11px;border-radius:5px;cursor:pointer;transition:.12s;}
@@ -91,7 +92,7 @@
   .tcell .figure{font-size:21px;font-weight:700;display:flex;align-items:baseline;gap:6px;}
   .tcell .delta{font-size:11.5px;font-weight:700;}
   .tcell .cap{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
-  .up{color:var(--risk);} .down{color:var(--good);}
+  .up{color:var(--good);} .down{color:var(--risk);}
 
   .p7{grid-column:span 7;} .p5{grid-column:span 5;} .p6{grid-column:span 6;} .p12{grid-column:span 12;}
 
@@ -300,7 +301,7 @@
 
         <div class="ticker">
           <div class="tcell"><div class="lbl">Sales</div><div class="figure mono" id="tkRev">$1.09M</div><div class="cap" id="tkRevCap">last 12 weeks</div></div>
-          <div class="tcell"><div class="lbl">Est. margin</div><div class="figure mono">30¢<span style="font-size:11px;color:var(--ink-faint);font-weight:500;">/$1</span></div><div class="cap">modeled target, not measured COGS</div></div>
+          <div class="tcell"><div class="lbl">Est. margin</div><div class="figure mono">$0.30<span style="font-size:11px;color:var(--ink-faint);font-weight:500;">/$1</span></div><div class="cap">flat modeled target (30%), not measured COGS - fixed across all filters, see Deep Insights</div></div>
           <div class="tcell"><div class="lbl">Promo share</div><div class="figure mono" id="tkPromo">51%</div><div class="cap" id="tkPromoCap">of sales at a discount</div></div>
           <div class="tcell"><div class="lbl">Pricing health</div><div class="figure mono" id="tkHealth">68<span style="font-size:11px;color:var(--ink-faint);">/100</span></div><div class="cap">40% momentum · 30% promo · 30% margin proxy</div></div>
           <div class="tcell"><div class="lbl">Avg. spend / trip</div><div class="figure mono" id="tkBasket">$29.21</div><div class="cap">275,889 trips, full history</div></div>
@@ -693,6 +694,16 @@ const DI_RULE_CONSTRAINTS = {
   maxDemandLossPct: 25,
   maxCompetitorGapPct: 15,
 };
+/* DI_MARGIN_ASSUMPTION is deliberately a single flat constant, not a per-department figure.
+   The dataset has no real COGS/cost data, only prices and units sold - so actual margin
+   can't be measured or computed per department, week range, or any other filter.
+   30% is a fixed modeling target supplied to the pricing-recommendation engine (see
+   diComputeRecommendation and the What-If simulator below), used the same way regardless
+   of which department/date-range slice the user is looking at. This is why "Est. margin"
+   in the Overview ticker does not move when filters change: it isn't filtered data,
+   it's a constant assumption the model is told to target. Do not wire it to state.dept /
+   state.weeks - there is nothing in DEPTSTATS to vary it by, and doing so would fabricate
+   a number that looks measured but isn't. */
 const DI_MARGIN_ASSUMPTION = 0.30;
 const DI_PRODUCTS_RAW = [
   // ---- source: sku-regression (real price + real per-SKU elasticity fit) ----
